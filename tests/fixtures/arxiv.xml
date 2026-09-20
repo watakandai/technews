@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/k9CXT1jUVyDp6h/nlZRwFKzYzsU</id>
+  <title>arXiv Query: search_query=cat:cs.RO&amp;id_list=&amp;start=0&amp;max_results=3</title>
+  <updated>2026-09-20T00:58:23Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=cat:cs.RO&amp;start=0&amp;max_results=3&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>3</opensearch:itemsPerPage>
+  <opensearch:totalResults>58344</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2012.11345v1</id>
+    <title>Analysis of Safe Ultrawideband Human-Robot Communication in Automated Collaborative Warehouse</title>
+    <updated>2020-12-21T13:55:21Z</updated>
+    <link href="https://arxiv.org/abs/2012.11345v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2012.11345v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The paper presents the propagation analysis of ultrawideband Gaussian signal in an automated collaborative warehouse environment where human and robots communicate to ensure that mutual collisions do not occur. The warehouse racks are principally modeled as clusters of metallic (PEC) parallelepipeds, with dimensions chosen to approximate the realistic warehouse. The signal propagation is analyzed using a ray tracing software, with the goal to calculate the path loss profile for different representative scenarios and antenna polarizations. The influence of the rack surface roughness onto propagation is also analyzed. The guidelines for optimum antenna positions on humans and robots for safe communication are proposed according to the simulations results.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-12-21T13:55:21Z</published>
+    <arxiv:comment>2020 14th European Conference on Antennas and Propagation (EuCAP). arXiv admin note: text overlap with arXiv:2001.03160</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Branimir Ivšić</name>
+    </author>
+    <author>
+      <name>Zvonimir Šipuš</name>
+    </author>
+    <author>
+      <name>Juraj Bartolić</name>
+    </author>
+    <author>
+      <name>Josip Babić</name>
+    </author>
+    <arxiv:doi>10.23919/eucap48036.2020.9135568</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.23919/eucap48036.2020.9135568" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2012.12142v1</id>
+    <title>High-Speed Robot Navigation using Predicted Occupancy Maps</title>
+    <updated>2020-12-22T16:25:12Z</updated>
+    <link href="https://arxiv.org/abs/2012.12142v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2012.12142v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Safe and high-speed navigation is a key enabling capability for real world deployment of robotic systems. A significant limitation of existing approaches is the computational bottleneck associated with explicit mapping and the limited field of view (FOV) of existing sensor technologies. In this paper, we study algorithmic approaches that allow the robot to predict spaces extending beyond the sensor horizon for robust planning at high speeds. We accomplish this using a generative neural network trained from real-world data without requiring human annotated labels. Further, we extend our existing control algorithms to support leveraging the predicted spaces to improve collision-free planning and navigation at high speeds. Our experiments are conducted on a physical robot based on the MIT race car using an RGBD sensor where were able to demonstrate improved performance at 4 m/s compared to a controller not operating on predicted regions of the map.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-12-22T16:25:12Z</published>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Kapil D. Katyal</name>
+      <arxiv:affiliation>Johns Hopkins University Applied Physics Lab</arxiv:affiliation>
+      <arxiv:affiliation>Dept. of Comp. Sci., Johns Hopkins University</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Adam Polevoy</name>
+      <arxiv:affiliation>Johns Hopkins University Applied Physics Lab</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Joseph Moore</name>
+      <arxiv:affiliation>Johns Hopkins University Applied Physics Lab</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Craig Knuth</name>
+      <arxiv:affiliation>Johns Hopkins University Applied Physics Lab</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Katie M. Popek</name>
+      <arxiv:affiliation>Johns Hopkins University Applied Physics Lab</arxiv:affiliation>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2012.13240v1</id>
+    <title>Robotic Following of Flexible Extended Objects: Relevant Technical Facts on the Kinematics of a Moving Continuum</title>
+    <updated>2020-12-24T13:14:49Z</updated>
+    <link href="https://arxiv.org/abs/2012.13240v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2012.13240v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The paper offers general technical facts on the kinematics of a moving continuum involved in research on robotic following of flexible extended objects.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-12-24T13:14:49Z</published>
+    <arxiv:comment>19 pages</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>A. S. Matveev</name>
+    </author>
+    <author>
+      <name>V. V. Magerkin</name>
+    </author>
+  </entry>
+</feed>

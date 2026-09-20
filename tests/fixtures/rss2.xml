@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:media="http://search.yahoo.com/mrss/"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Example Tech</title>
+    <item>
+      <title>A new SMT solver lands</title>
+      <link>https://example.com/smt?utm_source=rss</link>
+      <guid isPermaLink="false">example-1</guid>
+      <pubDate>Fri, 19 Sep 2026 17:00:00 +0000</pubDate>
+      <dc:creator>Jane Roe</dc:creator>
+      <category>verification</category>
+      <category>tools</category>
+      <description><![CDATA[<p>It proves <b>things</b>.</p><img src="https://cdn.example.com/a.png"/>]]></description>
+    </item>
+    <item>
+      <title>Second story</title>
+      <link>https://example.com/two</link>
+      <pubDate>not a date at all</pubDate>
+      <media:content url="https://cdn.example.com/b.jpg"/>
+      <content:encoded>Full text here.</content:encoded>
+    </item>
+    <item>
+      <title>No link, should be skipped</title>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,57 @@
+[
+ {
+  "short_id": "blmlco",
+  "created_at": "2026-09-19T10:44:52.572-05:00",
+  "title": "AI Is an Elite Crime Spree",
+  "url": "https://www.thebignewsletter.com/p/ai-is-an-elite-crime-spree",
+  "score": 37,
+  "flags": 6,
+  "comment_count": 10,
+  "description": "",
+  "description_plain": "",
+  "submitter_user": "jcd",
+  "user_is_author": false,
+  "tags": [
+   "law"
+  ],
+  "short_id_url": "https://lobste.rs/s/blmlco",
+  "comments_url": "https://lobste.rs/s/blmlco/ai_is_elite_crime_spree"
+ },
+ {
+  "short_id": "re9wk8",
+  "created_at": "2026-09-19T14:27:46.429-05:00",
+  "title": "we have a year to fix security everywhere",
+  "url": "https://jyn.dev/a-year-to-fix-security/",
+  "score": 14,
+  "flags": 0,
+  "comment_count": 14,
+  "description": "",
+  "description_plain": "",
+  "submitter_user": "apropos",
+  "user_is_author": false,
+  "tags": [
+   "security",
+   "vibecoding"
+  ],
+  "short_id_url": "https://lobste.rs/s/re9wk8",
+  "comments_url": "https://lobste.rs/s/re9wk8/we_have_year_fix_security_everywhere"
+ },
+ {
+  "short_id": "kaqsr5",
+  "created_at": "2026-09-19T08:41:57.630-05:00",
+  "title": "I Built Non-Autoregressive Decision Models a Year Ago. Then a Frontier Lab Called It a \"Breakthrough\"",
+  "url": "https://dev.to/nandakishor_m_6cc0adfde9f/i-built-non-autoregressive-decision-models-a-year-ago-then-a-frontier-lab-called-it-a-18me",
+  "score": 40,
+  "flags": 1,
+  "comment_count": 4,
+  "description": "",
+  "description_plain": "",
+  "submitter_user": "Yogthos",
+  "user_is_author": false,
+  "tags": [
+   "ai"
+  ],
+  "short_id_url": "https://lobste.rs/s/kaqsr5",
+  "comments_url": "https://lobste.rs/s/kaqsr5/i_built_non_autoregressive_decision"
+ }
+]

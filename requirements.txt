@@ -1,0 +1,4 @@
+# Intentionally empty: the fetchers, database, rankers and the Gemini client
+# are pure standard-library Python, which is what lets the daily workflow run
+# with no install step at all. Only the tests need anything (see
+# requirements-dev.txt).

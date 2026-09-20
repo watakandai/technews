@@ -1,0 +1,149 @@
+name: Daily news refresh
+
+# The part of this project that GitHub Actions genuinely improves on running
+# it locally: a runner has real outbound internet, a cron that fires whether
+# or not a laptop is open, and a free place to publish the result.
+#
+# No `pip install` step, deliberately: every fetcher, the database, both
+# rankers and the Gemini client are pure standard library. There is nothing
+# to install and nothing that can break on a dependency release.
+#
+# The database is CACHED between runs rather than rebuilt, and that is what
+# makes daily LLM ranking cost pennies: scores are keyed by a hash of
+# profile.md + model, so each run only pays to score items it has never
+# seen. Losing the cache is harmless - the next run re-scores once.
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 13:00 UTC daily = 6am PT, ready before the morning read
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'LLM ranker provider (blank = use the RANKER_PROVIDER variable)'
+        required: false
+        type: choice
+        options: ['', 'gemini', 'anthropic']
+        default: ''
+      rescore_all:
+        description: 'Re-score every recent item, not just new ones'
+        required: false
+        type: boolean
+        default: false
+      limit:
+        description: 'Max items to LLM-score this run (blank = RANKER_LIMIT, 0 = no limit)'
+        required: false
+        type: string
+        default: ''
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+# One run at a time. Two overlapping runs share one API quota, and the
+# second to finish cannot push its export (the first moved main) - so it
+# fails before saving its cache, and every score it paid for is lost.
+concurrency:
+  group: daily-fetch
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Rolling cache: the run-number key never hits, so the newest previous
+      # database is restored via the prefix and a fresh copy saved under
+      # this run's key.
+      - name: Restore news database
+        uses: actions/cache@v4
+        with:
+          path: /tmp/news.db
+          key: news-db-${{ github.run_number }}
+          restore-keys: news-db-
+
+      - name: Fetch every source
+        env:
+          # Optional. Without them Reddit falls back to its public feed,
+          # which is rate-limited from CI and carries no scores.
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          # Optional, and X's search endpoint is not on its free tier - the
+          # fetcher reports itself disabled and is skipped when unset.
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          # Free and automatic: lifts the GitHub search rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m tech_news_curator.cli --db /tmp/news.db fetch --days 3
+
+      # Which provider to use is explicit: set the RANKER_PROVIDER repo
+      # variable (Settings -> Variables) to gemini or anthropic and add the
+      # matching secret. Left unset, the LLM step is skipped and the site
+      # ships heuristic scores only - so a fork with no keys still works.
+      - name: Resolve ranker provider
+        id: ranker
+        env:
+          REQUESTED: ${{ inputs.provider || vars.RANKER_PROVIDER }}
+          HAS_GEMINI: ${{ secrets.GEMINI_API_KEY != '' }}
+          HAS_ANTHROPIC: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        run: |
+          case "$REQUESTED" in
+            gemini)    [ "$HAS_GEMINI" = true ]    || { echo "::warning::RANKER_PROVIDER=gemini but GEMINI_API_KEY is not set; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0; } ;;
+            anthropic) [ "$HAS_ANTHROPIC" = true ] || { echo "::warning::RANKER_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0; } ;;
+            '')        echo "RANKER_PROVIDER not set - shipping heuristic scores only." ;;
+            *)         echo "::warning::unknown RANKER_PROVIDER '$REQUESTED'; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0 ;;
+          esac
+          echo "provider=$REQUESTED" >> "$GITHUB_OUTPUT"
+
+      # Exactly one of the next two steps runs. `rank --llm` does the
+      # popularity and heuristic passes itself before calling the provider,
+      # so running both would compute the same scores twice.
+      - name: Rank (popularity + heuristic only)
+        if: steps.ranker.outputs.provider == ''
+        run: python -m tech_news_curator.cli --db /tmp/news.db rank
+
+      - name: Rank against profile.md with an LLM
+        if: steps.ranker.outputs.provider != ''
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROVIDER: ${{ steps.ranker.outputs.provider }}
+          RESCORE_ALL: ${{ inputs.rescore_all }}
+          # A manual run's `limit` input wins over the variable, so a one-off
+          # "score everything" run doesn't mean editing repo settings.
+          LIMIT: ${{ inputs.limit != '' && inputs.limit || vars.RANKER_LIMIT }}
+          # Gemini's free tier counts REQUESTS against a small daily quota,
+          # not items - so send many items per request, and space requests
+          # out to stay under the per-minute limit rather than bump into it.
+          BATCH_SIZE: ${{ vars.RANKER_BATCH_SIZE || 40 }}
+          MIN_INTERVAL: ${{ vars.RANKER_MIN_INTERVAL || 8 }}
+        run: |
+          args=(--provider "$PROVIDER" --batch-size "$BATCH_SIZE" --min-interval "$MIN_INTERVAL")
+          [ "$RESCORE_ALL" = true ] && args+=(--rescore-all)
+          if [ -n "$LIMIT" ]; then
+            case "$LIMIT" in
+              *[!0-9]*) echo "::error::limit must be a whole number, got '$LIMIT'"; exit 1 ;;
+            esac
+            args+=(--limit "$LIMIT")
+          fi
+          python -m tech_news_curator.cli --db /tmp/news.db rank --llm "${args[@]}"
+
+      # Keeps the cached database from growing without bound. Runs after
+      # ranking so nothing is dropped between being scored and exported.
+      - name: Prune old items
+        run: python -m tech_news_curator.cli --db /tmp/news.db prune --days ${{ vars.PRUNE_DAYS || 45 }}
+
+      - name: Export the static JSON
+        run: |
+          python -m tech_news_curator.cli --db /tmp/news.db export \
+            --out docs/data/items.json --sort score --days ${{ vars.EXPORT_DAYS || 10 }}
+
+      - name: Commit and push if the export changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'Daily news refresh'
+          file_pattern: docs/data/items.json

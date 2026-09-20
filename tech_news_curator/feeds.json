@@ -1,0 +1,33 @@
+{
+  "_comment": [
+    "Feed-shaped sources. Adding an outlet is a line here, not a new fetcher.",
+    "`hint` is a category from categorize.CATEGORIES, applied when neither the",
+    "keyword pass nor the LLM has a better idea - a robotics trade publication",
+    "is about robotics even when a given headline doesn't say so.",
+    "Feeds verified reachable on 2026-09-19; a dead one fails soft and is",
+    "reported by `cli fetch`, it never breaks the run."
+  ],
+  "feeds": [
+    {"name": "techmeme",        "url": "https://www.techmeme.com/feed.xml",                "hint": ""},
+    {"name": "techcrunch",      "url": "https://techcrunch.com/feed/",                     "hint": "startups"},
+    {"name": "crunchbase",      "url": "https://news.crunchbase.com/feed/",                "hint": "startups"},
+    {"name": "stratechery",     "url": "https://stratechery.com/feed/",                    "hint": "finance"},
+    {"name": "cnbc_tech",       "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910", "hint": "finance"},
+    {"name": "ieee_spectrum",   "url": "https://spectrum.ieee.org/feeds/topic/robotics.rss","hint": "robotics"},
+    {"name": "robot_report",    "url": "https://www.therobotreport.com/feed/",             "hint": "robotics"},
+    {"name": "deepmind",        "url": "https://deepmind.google/blog/rss.xml",             "hint": "ai_ml"},
+    {"name": "openai",          "url": "https://openai.com/news/rss.xml",                  "hint": "ai_ml"},
+    {"name": "huggingface",     "url": "https://huggingface.co/blog/feed.xml",             "hint": "ai_ml"},
+    {"name": "importai",        "url": "https://importai.substack.com/feed",               "hint": "ai_ml"},
+    {"name": "nvidia_blog",     "url": "https://blogs.nvidia.com/feed/",                   "hint": "hardware"},
+    {"name": "mit_tech_review", "url": "https://www.technologyreview.com/feed/",           "hint": ""},
+    {"name": "arstechnica",     "url": "https://feeds.arstechnica.com/arstechnica/index",  "hint": ""},
+    {"name": "theverge",        "url": "https://www.theverge.com/rss/index.xml",           "hint": ""},
+    {"name": "macrumors",       "url": "https://www.macrumors.com/macrumors.xml",          "hint": "rumors"},
+    {"name": "github_blog",     "url": "https://github.blog/feed/",                        "hint": "devtools"},
+    {"name": "lwn",             "url": "https://lwn.net/headlines/newrss",                 "hint": "open_source"},
+    {"name": "producthunt",     "url": "https://www.producthunt.com/feed",                 "hint": "devtools"},
+    {"name": "simonwillison",   "url": "https://simonwillison.net/atom/everything/",       "hint": "devtools"},
+    {"name": "jvns",            "url": "https://jvns.ca/atom.xml",                         "hint": "devtools"}
+  ]
+}

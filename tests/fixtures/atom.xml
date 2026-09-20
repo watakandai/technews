@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Example Atom</title>
+  <entry>
+    <title>Control theory for quadrupeds</title>
+    <link rel="alternate" href="https://example.org/control"/>
+    <link rel="replies" href="https://example.org/control/comments"/>
+    <id>tag:example.org,2026:1</id>
+    <published>2026-09-19T12:00:00Z</published>
+    <author><name>Alex Doe</name></author>
+    <category term="robotics"/>
+    <summary>A summary of the post.</summary>
+  </entry>
+</feed>

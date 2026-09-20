@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tech News Curator</title>
+<style>
+  :root {
+    --bg:#f7f7f8; --card:#fff; --border:#e4e4e7; --text:#18181b; --muted:#71717a;
+    --accent:#2563eb; --accent-soft:#eff6ff; --good:#15803d; --seen:#a1a1aa;
+    --chip:#f4f4f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0d0d0f; --card:#161619; --border:#27272a; --text:#e8e8ea; --muted:#8b8b93;
+      --accent:#60a5fa; --accent-soft:#16213a; --good:#4ade80; --seen:#5a5a63;
+      --chip:#1f1f23;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  a { color:inherit; }
+  header { position:sticky; top:0; z-index:20; background:var(--card);
+           border-bottom:1px solid var(--border); padding:10px 16px; }
+  .hrow { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; max-width:1000px; margin:0 auto; }
+  h1 { font-size:15px; margin:0; letter-spacing:-.01em; }
+  .sub { font-size:12px; color:var(--muted); }
+  .spacer { flex:1; }
+  main { max-width:1000px; margin:0 auto; padding:14px 16px 60px; }
+  .bar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:0 auto 10px;
+         max-width:1000px; }
+  .seg { display:inline-flex; border:1px solid var(--border); border-radius:7px; overflow:hidden; }
+  .seg button { border:0; background:var(--card); color:var(--muted); font:inherit; font-size:12.5px;
+                padding:5px 11px; cursor:pointer; border-right:1px solid var(--border); }
+  .seg button:last-child { border-right:0; }
+  .seg button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  input[type=search] { flex:1; min-width:140px; padding:5px 10px; font:inherit; font-size:12.5px;
+    border:1px solid var(--border); border-radius:7px; background:var(--card); color:var(--text); }
+  .toggle { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:5px;
+            cursor:pointer; user-select:none; }
+  .cats { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:12px; }
+  .cat { border:1px solid var(--border); background:var(--card); color:var(--muted);
+         border-radius:999px; padding:3px 10px; font-size:12px; cursor:pointer; }
+  .cat[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  .cat .n { opacity:.6; margin-left:4px; font-variant-numeric:tabular-nums; }
+
+  .group-head { font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted);
+                margin:20px 0 7px; padding-bottom:5px; border-bottom:1px solid var(--border); }
+  .group-head:first-child { margin-top:4px; }
+
+  .item { display:flex; gap:10px; padding:9px 10px; border-radius:8px; align-items:flex-start;
+          border:1px solid transparent; }
+  .item:hover { background:var(--card); border-color:var(--border); }
+  .item.cursor { border-color:var(--accent); background:var(--card); }
+  .item.seen .title a { color:var(--seen); font-weight:400; }
+  .score { flex:0 0 34px; text-align:right; font-variant-numeric:tabular-nums; font-size:12px;
+           font-weight:600; color:var(--accent); padding-top:1px; }
+  .score.low { color:var(--muted); font-weight:400; }
+  .body { min-width:0; flex:1; }
+  .title { margin:0; font-size:14.5px; font-weight:600; line-height:1.35; }
+  .title a { text-decoration:none; }
+  .title a:hover { text-decoration:underline; }
+  .meta { font-size:12px; color:var(--muted); margin-top:2px; display:flex; gap:6px; flex-wrap:wrap;
+          align-items:center; }
+  .dot::before { content:"·"; margin-right:6px; }
+  .src { font-weight:600; color:var(--text); opacity:.75; }
+  .pop { color:var(--good); font-variant-numeric:tabular-nums; }
+  .why { font-style:italic; }
+  .also a { color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--border); }
+  .also a:hover { color:var(--accent); }
+  .summary { font-size:13px; color:var(--muted); margin-top:4px; display:none; }
+  .item.open .summary { display:block; }
+  .tag { background:var(--chip); border-radius:4px; padding:1px 6px; font-size:11px; }
+  .empty, .status { color:var(--muted); font-size:13px; padding:30px 0; text-align:center; }
+  .status.error { color:#dc2626; }
+  footer { max-width:1000px; margin:0 auto; padding:10px 16px 40px; font-size:12px; color:var(--muted); }
+  kbd { background:var(--chip); border:1px solid var(--border); border-radius:4px; padding:0 4px;
+        font:inherit; font-size:11px; }
+  @media (max-width:560px) { .score { flex-basis:28px; } .sub { display:none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1>Tech News Curator</h1>
+    <span class="sub" id="generated"></span>
+    <span class="spacer"></span>
+    <span class="sub" id="counts"></span>
+  </div>
+</header>
+
+<main>
+  <div class="bar">
+    <div class="seg" id="window-seg">
+      <button data-days="1" aria-pressed="true">Today</button>
+      <button data-days="3">3 days</button>
+      <button data-days="7">Week</button>
+      <button data-days="0">All</button>
+    </div>
+    <div class="seg" id="sort-seg">
+      <button data-sort="score" aria-pressed="true">For you</button>
+      <button data-sort="popularity">Popular</button>
+      <button data-sort="published_ts">Newest</button>
+    </div>
+    <input type="search" id="q" placeholder="Filter by word, source or tag...">
+    <label class="toggle"><input type="checkbox" id="hide-seen"> hide seen</label>
+    <label class="toggle"><input type="checkbox" id="group-cats" checked> group</label>
+  </div>
+  <div class="cats" id="cats"></div>
+  <div id="list"></div>
+  <div class="status" id="status">Loading...</div>
+</main>
+
+<footer>
+  <kbd>j</kbd>/<kbd>k</kbd> move · <kbd>o</kbd> open · <kbd>m</kbd> mark seen · <kbd>space</kbd> expand ·
+  Ranked against <code>profile.md</code>. Seen state is stored in this browser only.
+</footer>
+
+<script>
+const LS = {
+  // Per-browser preferences and read state. Every access is guarded: a
+  // private window, blocked site data or a thrown SecurityError must leave
+  // the page fully working, just without memory.
+  get(key, fallback) {
+    try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); }
+    catch (e) { return fallback; }
+  },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} },
+};
+
+const state = {
+  items: [],
+  categories: {},
+  days: LS.get('days', 1),
+  sort: LS.get('sort', 'score'),
+  query: '',
+  cats: new Set(LS.get('cats', [])),      // empty = show every category
+  hideSeen: LS.get('hideSeen', false),
+  group: LS.get('group', true),
+  seen: new Set(LS.get('seen', [])),
+  cursor: -1,
+};
+
+// An item's identity across daily rebuilds. Row ids are assigned by the
+// database and shift when the Actions cache is lost, so seen-state keys off
+// the URL instead - which is stable for as long as the story is.
+const idOf = it => it.url || it.discussion_url || it.title;
+
+function markSeen(it) {
+  state.seen.add(idOf(it));
+  // Unbounded growth would eventually blow the 5MB quota; a month of daily
+  // reading is a few thousand keys, so keep the newest 4000.
+  const keep = [...state.seen].slice(-4000);
+  state.seen = new Set(keep);
+  LS.set('seen', keep);
+}
+
+const fmtAge = ts => {
+  if (!ts) return '';
+  const h = (Date.now() - new Date(ts).getTime()) / 3.6e6;
+  if (!isFinite(h)) return '';
+  if (h < 1) return Math.max(1, Math.round(h * 60)) + 'm';
+  if (h < 24) return Math.round(h) + 'h';
+  return Math.round(h / 24) + 'd';
+};
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function withinWindow(it) {
+  if (!state.days) return true;
+  const ts = it.published_ts;
+  if (!ts) return true;  // undated is "current until proven otherwise"
+  return (Date.now() - new Date(ts).getTime()) <= state.days * 864e5;
+}
+
+function matchesQuery(it) {
+  if (!state.query) return true;
+  const hay = [it.title, it.source, it.summary, it.category,
+               (it.tags || []).join(' ')].join(' ').toLowerCase();
+  return state.query.split(/\s+/).every(term => hay.includes(term));
+}
+
+function visible() {
+  return state.items.filter(it =>
+    withinWindow(it) && matchesQuery(it)
+    && (!state.cats.size || state.cats.has(it.category || 'other'))
+    && !(state.hideSeen && state.seen.has(idOf(it))));
+}
+
+function sortItems(rows) {
+  const key = state.sort;
+  return rows.slice().sort((a, b) => {
+    if (key === 'published_ts') return (b.published_ts || '').localeCompare(a.published_ts || '');
+    // Missing values sort last rather than as zero: "not measured" is not
+    // the same claim as "measured, and it was nothing".
+    const av = a[key] == null ? -1 : a[key], bv = b[key] == null ? -1 : b[key];
+    return bv - av || (b.popularity || 0) - (a.popularity || 0);
+  });
+}
+
+function alsoHtml(it) {
+  if (!it.also || !it.also.length) return '';
+  const links = it.also.filter(a => a.url).slice(0, 4).map(a => {
+    const n = a.comments ? `${a.comments} comments` : (a.points ? `${a.points} ${a.metric || 'pts'}` : '');
+    return `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.source)}${n ? ' ' + esc(n) : ''}</a>`;
+  });
+  return links.length ? `<span class="dot"></span><span class="also">also: ${links.join(', ')}</span>` : '';
+}
+
+function itemHtml(it, index) {
+  const seen = state.seen.has(idOf(it));
+  const score = it.score == null ? '—' : Math.round(it.score);
+  const link = it.url || it.discussion_url || '#';
+  const cat = state.categories[it.category] || '';
+  const bits = [`<span class="src">${esc(it.source)}</span>`];
+  if (it.published_ts) bits.push(`<span class="dot">${esc(fmtAge(it.published_ts))}</span>`);
+  if (it.popularity != null) bits.push(
+    `<span class="dot pop" title="${esc(it.popularity_reason || '')}">▲ ${Math.round(it.popularity)}</span>`);
+  if (cat) bits.push(`<span class="dot"><span class="tag">${esc(cat)}</span></span>`);
+  if (it.score_reason) bits.push(`<span class="dot why">${esc(it.score_reason)}</span>`);
+  return `<article class="item${seen ? ' seen' : ''}" data-i="${index}">
+    <div class="score${it.score != null && it.score < 50 ? ' low' : ''}"
+         title="${esc(it.scored_by || 'unscored')}">${score}</div>
+    <div class="body">
+      <p class="title"><a href="${esc(link)}" target="_blank" rel="noopener">${esc(it.title)}</a></p>
+      <div class="meta">${bits.join(' ')}${alsoHtml(it)}</div>
+      ${it.summary ? `<div class="summary">${esc(it.summary)}</div>` : ''}
+    </div>
+  </article>`;
+}
+
+let rendered = [];
+
+function render() {
+  const rows = sortItems(visible());
+  rendered = rows;
+  const list = document.getElementById('list');
+
+  if (!rows.length) {
+    list.innerHTML = `<p class="empty">Nothing matches. Widen the window or clear the filters.</p>`;
+  } else if (state.group && state.sort === 'score') {
+    // Grouping only makes sense under "For you": under Popular or Newest
+    // the whole point is one continuous ranking.
+    const groups = new Map();
+    rows.forEach(it => {
+      const key = it.category || 'other';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(it);
+    });
+    // Categories ordered by their best item, so the day's strongest
+    // subject is what you read first.
+    const ordered = [...groups.entries()].sort(
+      (a, b) => (b[1][0].score || 0) - (a[1][0].score || 0));
+    list.innerHTML = ordered.map(([cat, items]) =>
+      `<h2 class="group-head">${esc(state.categories[cat] || cat)} · ${items.length}</h2>` +
+      items.map(it => itemHtml(it, rows.indexOf(it))).join('')).join('');
+  } else {
+    list.innerHTML = rows.map(itemHtml).join('');
+  }
+
+  const unseen = rows.filter(it => !state.seen.has(idOf(it))).length;
+  document.getElementById('counts').textContent =
+    `${rows.length} shown · ${unseen} unread`;
+  renderCats();
+}
+
+function renderCats() {
+  const counts = {};
+  state.items.filter(it => withinWindow(it) && matchesQuery(it))
+    .forEach(it => { const c = it.category || 'other'; counts[c] = (counts[c] || 0) + 1; });
+  const el = document.getElementById('cats');
+  el.innerHTML = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, n]) => `<button class="cat" data-cat="${esc(cat)}"
+        aria-pressed="${state.cats.has(cat)}">${esc(state.categories[cat] || cat)}<span class="n">${n}</span></button>`)
+    .join('');
+}
+
+// -- interaction -----------------------------------------------------------
+
+function moveCursor(delta) {
+  const nodes = [...document.querySelectorAll('.item')];
+  if (!nodes.length) return;
+  document.querySelectorAll('.item.cursor').forEach(n => n.classList.remove('cursor'));
+  state.cursor = Math.max(0, Math.min(nodes.length - 1, state.cursor + delta));
+  const node = nodes[state.cursor];
+  node.classList.add('cursor');
+  node.scrollIntoView({ block: 'nearest' });
+}
+
+function currentItem() {
+  const node = document.querySelector('.item.cursor');
+  return node ? rendered[+node.dataset.i] : null;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  const it = currentItem();
+  if (e.key === 'j') { moveCursor(1); e.preventDefault(); }
+  else if (e.key === 'k') { moveCursor(-1); e.preventDefault(); }
+  else if (e.key === 'o' || e.key === 'Enter') {
+    if (it) { markSeen(it); window.open(it.url || it.discussion_url, '_blank', 'noopener'); render(); }
+  } else if (e.key === 'm') {
+    if (it) { markSeen(it); render(); }
+  } else if (e.key === ' ') {
+    const node = document.querySelector('.item.cursor');
+    if (node) { node.classList.toggle('open'); e.preventDefault(); }
+  }
+});
+
+document.getElementById('list').addEventListener('click', e => {
+  const node = e.target.closest('.item');
+  if (!node) return;
+  const it = rendered[+node.dataset.i];
+  if (e.target.closest('a')) {
+    // Opening it is what "read" means; re-rendering now would yank the
+    // list out from under the click, so just grey the row in place.
+    if (it) { markSeen(it); node.classList.add('seen'); }
+    return;
+  }
+  node.classList.toggle('open');
+});
+
+function seg(id, key, cast) {
+  document.getElementById(id).addEventListener('click', e => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    state[key] = cast(button.dataset[key === 'days' ? 'days' : 'sort']);
+    LS.set(key, state[key]);
+    [...button.parentElement.children].forEach(b => b.setAttribute('aria-pressed', b === button));
+    state.cursor = -1;
+    render();
+  });
+}
+seg('window-seg', 'days', Number);
+seg('sort-seg', 'sort', String);
+
+document.getElementById('cats').addEventListener('click', e => {
+  const button = e.target.closest('.cat');
+  if (!button) return;
+  const cat = button.dataset.cat;
+  state.cats.has(cat) ? state.cats.delete(cat) : state.cats.add(cat);
+  LS.set('cats', [...state.cats]);
+  render();
+});
+
+let debounce;
+document.getElementById('q').addEventListener('input', e => {
+  clearTimeout(debounce);
+  debounce = setTimeout(() => {
+    state.query = e.target.value.trim().toLowerCase();
+    render();
+  }, 120);
+});
+
+for (const [id, key] of [['hide-seen', 'hideSeen'], ['group-cats', 'group']]) {
+  const box = document.getElementById(id);
+  box.checked = state[key];
+  box.addEventListener('change', () => { state[key] = box.checked; LS.set(key, box.checked); render(); });
+}
+
+// -- load ------------------------------------------------------------------
+
+function applyPrefs() {
+  document.querySelectorAll('#window-seg button').forEach(
+    b => b.setAttribute('aria-pressed', Number(b.dataset.days) === state.days));
+  document.querySelectorAll('#sort-seg button').forEach(
+    b => b.setAttribute('aria-pressed', b.dataset.sort === state.sort));
+}
+
+fetch('data/items.json', { cache: 'no-cache' })
+  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+  .then(data => {
+    state.items = data.items || [];
+    state.categories = data.categories || {};
+    document.getElementById('generated').textContent =
+      data.generated_at ? 'updated ' + fmtAge(data.generated_at) + ' ago' : '';
+    document.getElementById('status').remove();
+    applyPrefs();
+    render();
+  })
+  .catch(err => {
+    const status = document.getElementById('status');
+    status.className = 'status error';
+    status.textContent = `Could not load data/items.json (${err.message}). ` +
+      `Run: python -m tech_news_curator.cli export --out docs/data/items.json`;
+  });
+</script>
+</body>
+</html>
