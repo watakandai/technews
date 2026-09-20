@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from tech_news_curator import rank as ranking
-from tech_news_curator.rank import (
+from technews import rank as ranking
+from technews.rank import (
     ProviderError, cluster_sources, freshness, heuristic_scores, hours_old,
     llm_scores, parse_results, profile_hash, strip_comments,
 )

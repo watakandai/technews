@@ -11,7 +11,7 @@ A GitHub Action runs it every morning and pushes the result to GitHub Pages.
 It is a Twitter feed for one person, organized, with the noise ranked down.
 
 Built as a sibling to
-[sf_event_curator](https://github.com/watakandai/sf_event_curator) and shares
+[sfevents](https://github.com/watakandai/sfevents) and shares
 its shape: standard-library Python, a cached SQLite database, a two-layer
 ranker, and a static page committed to `docs/`.
 
@@ -42,7 +42,7 @@ export ->  docs/data/items.json  ->  GitHub Pages
 | ~20 RSS feeds | publications, labs, company blogs, newsletters | none |
 
 Adding a publication is one line in
-[`tech_news_curator/feeds.json`](tech_news_curator/feeds.json). Adding a new
+[`technews/feeds.json`](technews/feeds.json). Adding a new
 *kind* of source is one file in `fetchers/` plus one line in `cli.py`.
 
 **On X/Twitter:** the v2 search endpoint this would need is not on X's free
@@ -116,15 +116,15 @@ HTML comments are stripped before sending, so notes-to-self are safe.
 ### 2. Run it locally
 
 ```bash
-python -m tech_news_curator.cli --db /tmp/news.db fetch
+python -m technews.cli --db /tmp/news.db fetch
 ```
 
 ```bash
-python -m tech_news_curator.cli --db /tmp/news.db rank
+python -m technews.cli --db /tmp/news.db rank
 ```
 
 ```bash
-python -m tech_news_curator.cli --db /tmp/news.db export --out docs/data/items.json
+python -m technews.cli --db /tmp/news.db export --out docs/data/items.json
 ```
 
 Then open `docs/index.html` through any static server:
@@ -136,7 +136,7 @@ python -m http.server 8777 --directory docs
 To rank against your profile you need a key (free tier is plenty):
 
 ```bash
-GEMINI_API_KEY=... python -m tech_news_curator.cli --db /tmp/news.db rank --llm --provider gemini
+GEMINI_API_KEY=... python -m technews.cli --db /tmp/news.db rank --llm --provider gemini
 ```
 
 ### 3. Publish it
@@ -201,7 +201,7 @@ keeps a second run free.
 ## Layout
 
 ```
-tech_news_curator/
+technews/
   cli.py            fetch / rank / export / list / prune
   db.py             SQLite schema, migrations, upserts (peak counts win)
   models.py         one Item shape for every source

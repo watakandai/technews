@@ -78,7 +78,7 @@ jobs:
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           # Free and automatic: lifts the GitHub search rate limit.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python -m tech_news_curator.cli --db /tmp/news.db fetch --days 3
+        run: python -m technews.cli --db /tmp/news.db fetch --days 3
 
       # Which provider to use is explicit: set the RANKER_PROVIDER repo
       # variable (Settings -> Variables) to gemini or anthropic and add the
@@ -104,7 +104,7 @@ jobs:
       # so running both would compute the same scores twice.
       - name: Rank (popularity + heuristic only)
         if: steps.ranker.outputs.provider == ''
-        run: python -m tech_news_curator.cli --db /tmp/news.db rank
+        run: python -m technews.cli --db /tmp/news.db rank
 
       - name: Rank against profile.md with an LLM
         if: steps.ranker.outputs.provider != ''
@@ -130,16 +130,16 @@ jobs:
             esac
             args+=(--limit "$LIMIT")
           fi
-          python -m tech_news_curator.cli --db /tmp/news.db rank --llm "${args[@]}"
+          python -m technews.cli --db /tmp/news.db rank --llm "${args[@]}"
 
       # Keeps the cached database from growing without bound. Runs after
       # ranking so nothing is dropped between being scored and exported.
       - name: Prune old items
-        run: python -m tech_news_curator.cli --db /tmp/news.db prune --days ${{ vars.PRUNE_DAYS || 45 }}
+        run: python -m technews.cli --db /tmp/news.db prune --days ${{ vars.PRUNE_DAYS || 45 }}
 
       - name: Export the static JSON
         run: |
-          python -m tech_news_curator.cli --db /tmp/news.db export \
+          python -m technews.cli --db /tmp/news.db export \
             --out docs/data/items.json --sort score --days ${{ vars.EXPORT_DAYS || 10 }}
 
       - name: Commit and push if the export changed

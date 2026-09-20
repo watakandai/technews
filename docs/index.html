@@ -385,7 +385,7 @@ fetch('data/items.json', { cache: 'no-cache' })
     const status = document.getElementById('status');
     status.className = 'status error';
     status.textContent = `Could not load data/items.json (${err.message}). ` +
-      `Run: python -m tech_news_curator.cli export --out docs/data/items.json`;
+      `Run: python -m technews.cli export --out docs/data/items.json`;
   });
 </script>
 </body>

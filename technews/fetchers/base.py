@@ -17,7 +17,7 @@ from ..models import Item
 # reject the default urllib agent outright, and the ones that don't still
 # deserve to know who is calling them.
 USER_AGENT = (
-    "tech-news-curator/0.1 (+https://github.com/watakandai/tech_news_curator)"
+    "technews/0.1 (+https://github.com/watakandai/technews)"
 )
 
 

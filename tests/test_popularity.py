@@ -1,4 +1,4 @@
-from tech_news_curator.popularity import (
+from technews.popularity import (
     percentile_ranks, popularity_scores, propagate,
 )
 

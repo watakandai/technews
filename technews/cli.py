@@ -23,7 +23,7 @@ from .fetchers.reddit import RedditFetcher
 from .fetchers.rss import RSSFetcher
 from .fetchers.twitter import TwitterFetcher
 
-DEFAULT_DB = Path.home() / ".tech_news_curator" / "news.db"
+DEFAULT_DB = Path.home() / ".technews" / "news.db"
 FEEDS_FILE = Path(__file__).parent / "feeds.json"
 
 # Sources that can go quiet without erroring - a scraper-ish or credentialed

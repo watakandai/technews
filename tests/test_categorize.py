@@ -1,4 +1,4 @@
-from tech_news_curator.categorize import CATEGORIES, CATEGORY_ORDER, categorize, label
+from technews.categorize import CATEGORIES, CATEGORY_ORDER, categorize, label
 
 HINTS = {"robot_report": "robotics", "jvns": "devtools", "crunchbase": "startups"}
 

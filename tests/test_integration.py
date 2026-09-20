@@ -4,15 +4,15 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from tech_news_curator import rank as ranking
-from tech_news_curator.categorize import categorize
-from tech_news_curator.db import (
+from technews import rank as ranking
+from technews.categorize import categorize
+from technews.db import (
     init_db, query_items, row_to_dict, set_categories, set_heuristic_scores,
     set_llm_results, set_popularity, unscored_items, upsert_items,
 )
-from tech_news_curator.models import Item
-from tech_news_curator.popularity import popularity_scores, propagate
-from tech_news_curator.cli import collapse
+from technews.models import Item
+from technews.popularity import popularity_scores, propagate
+from technews.cli import collapse
 
 
 @pytest.fixture()

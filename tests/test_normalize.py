@@ -1,4 +1,4 @@
-from tech_news_curator.normalize import (
+from technews.normalize import (
     canonical_url, cluster_key, same_story, title_key, title_tokens,
 )
 

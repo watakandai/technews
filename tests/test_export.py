@@ -5,9 +5,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from tech_news_curator.cli import _slim, _sort_key, collapse
-from tech_news_curator.db import init_db, upsert_items
-from tech_news_curator.models import Item
+from technews.cli import _slim, _sort_key, collapse
+from technews.db import init_db, upsert_items
+from technews.models import Item
 
 
 def row(item_id, source, score=None, popularity=None, cluster="u:same", **kw):
@@ -89,7 +89,7 @@ def test_export_writes_line_delimited_json_a_diff_can_show(tmp_path):
     ])
     out = tmp_path / "items.json"
     subprocess.run(
-        [sys.executable, "-m", "tech_news_curator.cli", "--db", str(db),
+        [sys.executable, "-m", "technews.cli", "--db", str(db),
          "export", "--out", str(out), "--days", "10"],
         check=True, capture_output=True,
     )

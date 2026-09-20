@@ -1,6 +1,6 @@
 """Scoring, so a day's 900 items become a list worth reading top-down.
 
-Two rankers, the same layering as the sibling sf_event_curator project:
+Two rankers, the same layering as the sibling sfevents project:
 
 - `heuristic_scores` is deterministic, offline and free. It answers "how big
   a deal is this generally?" from signals that need no model: normalized

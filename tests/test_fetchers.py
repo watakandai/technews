@@ -8,13 +8,13 @@ import json
 
 from tests.conftest import fixture
 
-from tech_news_curator.fetchers.arxiv import ArxivFetcher
-from tech_news_curator.fetchers.bluesky import BlueskyFetcher, _slug_title
-from tech_news_curator.fetchers.github import GitHubTrendingFetcher
-from tech_news_curator.fetchers.hackernews import HackerNewsFetcher
-from tech_news_curator.fetchers.lobsters import LobstersFetcher
-from tech_news_curator.fetchers.reddit import RedditFetcher, _outbound
-from tech_news_curator.fetchers.rss import RSSFetcher
+from technews.fetchers.arxiv import ArxivFetcher
+from technews.fetchers.bluesky import BlueskyFetcher, _slug_title
+from technews.fetchers.github import GitHubTrendingFetcher
+from technews.fetchers.hackernews import HackerNewsFetcher
+from technews.fetchers.lobsters import LobstersFetcher
+from technews.fetchers.reddit import RedditFetcher, _outbound
+from technews.fetchers.rss import RSSFetcher
 
 
 def test_hackernews_reads_points_comments_and_the_outbound_link():

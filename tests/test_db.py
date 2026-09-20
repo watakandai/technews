@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from tech_news_curator.db import (
+from technews.db import (
     count_items, init_db, prune, query_items, row_to_dict, set_heuristic_scores,
     set_llm_results, set_categories, set_popularity, unscored_items, upsert_items,
 )
-from tech_news_curator.models import Item
+from technews.models import Item
 
 
 @pytest.fixture()
