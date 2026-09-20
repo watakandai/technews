@@ -174,7 +174,9 @@ caps it if you want a hard ceiling.
 daily scan rather than a browse:
 
 - **Today / 3 days / Week / All**, and **For you / Popular / Newest**
-- Grouped by category, with the day's strongest subject first
+- Grouped by category, with the day's strongest subject first — each
+  category shows its top 10, ungrouped shows 20, and a **show more** button
+  opens the rest. A day is ~200 rows, which is a wall rather than a page
 - Read state per-browser — click or press <kbd>m</kbd>, then **hide seen**
   to make yesterday disappear
 - <kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open, <kbd>space</kbd>

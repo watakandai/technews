@@ -72,6 +72,10 @@
   .summary { font-size:13px; color:var(--muted); margin-top:4px; display:none; }
   .item.open .summary { display:block; }
   .tag { background:var(--chip); border-radius:4px; padding:1px 6px; font-size:11px; }
+  .more { display:block; width:100%; margin:4px 0 2px; padding:7px 10px; font:inherit;
+          font-size:12.5px; color:var(--muted); background:transparent; cursor:pointer;
+          border:1px dashed var(--border); border-radius:8px; }
+  .more:hover { color:var(--accent); border-color:var(--accent); background:var(--card); }
   .empty, .status { color:var(--muted); font-size:13px; padding:30px 0; text-align:center; }
   .status.error { color:#dc2626; }
   footer { max-width:1000px; margin:0 auto; padding:10px 16px 40px; font-size:12px; color:var(--muted); }
@@ -140,6 +144,10 @@ const state = {
   group: LS.get('group', true),
   seen: new Set(LS.get('seen', [])),
   cursor: -1,
+  // Paging state, deliberately not persisted: each visit should start at
+  // the top of a short list, not wherever yesterday's reading ended up.
+  expanded: new Set(),   // category ids shown in full
+  flatShown: 20,         // rows shown in the ungrouped list
 };
 
 // An item's identity across daily rebuilds. Row ids are assigned by the
@@ -209,7 +217,8 @@ function alsoHtml(it) {
   return links.length ? `<span class="dot"></span><span class="also">also: ${links.join(', ')}</span>` : '';
 }
 
-function itemHtml(it, index) {
+function itemHtml(it) {
+  const index = it._i;
   const seen = state.seen.has(idOf(it));
   const score = it.score == null ? '—' : Math.round(it.score);
   const link = it.url || it.discussion_url || '#';
@@ -233,9 +242,23 @@ function itemHtml(it, index) {
 
 let rendered = [];
 
+// A day's list is ~200 rows, which is a wall rather than a page. Grouped,
+// each category shows its best few; flat, the list pages in. Nothing is
+// unreachable - every truncation carries the button that undoes it.
+const GROUP_LIMIT = 10;   // per category, when grouped
+const FLAT_PAGE = 20;     // first page, and each "show more" step, when flat
+
+function moreButton(key, hidden) {
+  return `<button class="more" data-more="${esc(key)}">show ${hidden} more</button>`;
+}
+
 function render() {
   const rows = sortItems(visible());
   rendered = rows;
+  // One pass to fix each row's index into `rendered`, so the keyboard
+  // cursor and click handler can find an item by position even when the
+  // DOM holds only a truncated subset of the list.
+  rows.forEach((it, i) => { it._i = i; });
   const list = document.getElementById('list');
 
   if (!rows.length) {
@@ -253,17 +276,47 @@ function render() {
     // subject is what you read first.
     const ordered = [...groups.entries()].sort(
       (a, b) => (b[1][0].score || 0) - (a[1][0].score || 0));
-    list.innerHTML = ordered.map(([cat, items]) =>
-      `<h2 class="group-head">${esc(state.categories[cat] || cat)} · ${items.length}</h2>` +
-      items.map(it => itemHtml(it, rows.indexOf(it))).join('')).join('');
+    list.innerHTML = ordered.map(([cat, items]) => {
+      const open = state.expanded.has(cat);
+      const shown = open ? items : items.slice(0, GROUP_LIMIT);
+      const hidden = items.length - shown.length;
+      // The heading keeps the true total: "10 of 42" is the useful fact,
+      // and a count that shrank to match the truncation would hide it.
+      return `<h2 class="group-head">${esc(state.categories[cat] || cat)} · ${items.length}</h2>` +
+        shown.map(itemHtml).join('') +
+        (hidden ? moreButton(cat, hidden) : '');
+    }).join('');
   } else {
-    list.innerHTML = rows.map(itemHtml).join('');
+    const shown = rows.slice(0, state.flatShown);
+    const hidden = rows.length - shown.length;
+    list.innerHTML = shown.map(itemHtml).join('') +
+      (hidden ? moreButton('', Math.min(hidden, FLAT_PAGE)) : '');
   }
 
   const unseen = rows.filter(it => !state.seen.has(idOf(it))).length;
   document.getElementById('counts').textContent =
-    `${rows.length} shown · ${unseen} unread`;
+    `${rows.length} match · ${unseen} unread`;
   renderCats();
+  restoreCursor();
+}
+
+// The cursor lives on a DOM node, and every render replaces the list - so
+// without this, marking one item read while scanning with j/k would drop
+// you back at the top.
+function restoreCursor() {
+  if (state.cursor < 0) return;
+  const nodes = document.querySelectorAll('.item');
+  if (!nodes.length) return;
+  state.cursor = Math.min(state.cursor, nodes.length - 1);
+  nodes[state.cursor].classList.add('cursor');
+}
+
+// Any change to what is being listed starts the paging over: keeping a
+// "show 60 more" state across a new search would be meaningless.
+function resetPaging() {
+  state.flatShown = FLAT_PAGE;
+  state.expanded.clear();
+  state.cursor = -1;
 }
 
 function renderCats() {
@@ -311,6 +364,15 @@ document.addEventListener('keydown', e => {
 });
 
 document.getElementById('list').addEventListener('click', e => {
+  const more = e.target.closest('.more');
+  if (more) {
+    const cat = more.dataset.more;
+    // A grouped category opens in full; the flat list takes one more page.
+    if (cat) state.expanded.add(cat);
+    else state.flatShown += FLAT_PAGE;
+    render();
+    return;
+  }
   const node = e.target.closest('.item');
   if (!node) return;
   const it = rendered[+node.dataset.i];
@@ -330,7 +392,7 @@ function seg(id, key, cast) {
     state[key] = cast(button.dataset[key === 'days' ? 'days' : 'sort']);
     LS.set(key, state[key]);
     [...button.parentElement.children].forEach(b => b.setAttribute('aria-pressed', b === button));
-    state.cursor = -1;
+    resetPaging();
     render();
   });
 }
@@ -343,6 +405,7 @@ document.getElementById('cats').addEventListener('click', e => {
   const cat = button.dataset.cat;
   state.cats.has(cat) ? state.cats.delete(cat) : state.cats.add(cat);
   LS.set('cats', [...state.cats]);
+  resetPaging();
   render();
 });
 
@@ -351,6 +414,7 @@ document.getElementById('q').addEventListener('input', e => {
   clearTimeout(debounce);
   debounce = setTimeout(() => {
     state.query = e.target.value.trim().toLowerCase();
+    resetPaging();
     render();
   }, 120);
 });
@@ -358,7 +422,12 @@ document.getElementById('q').addEventListener('input', e => {
 for (const [id, key] of [['hide-seen', 'hideSeen'], ['group-cats', 'group']]) {
   const box = document.getElementById(id);
   box.checked = state[key];
-  box.addEventListener('change', () => { state[key] = box.checked; LS.set(key, box.checked); render(); });
+  box.addEventListener('change', () => {
+    state[key] = box.checked;
+    LS.set(key, box.checked);
+    resetPaging();
+    render();
+  });
 }
 
 // -- load ------------------------------------------------------------------
