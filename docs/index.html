@@ -323,9 +323,13 @@ function renderCats() {
   const counts = {};
   state.items.filter(it => withinWindow(it) && matchesQuery(it))
     .forEach(it => { const c = it.category || 'other'; counts[c] = (counts[c] || 0) + 1; });
+  // Taxonomy order, not count order: a filter you reach for daily should be
+  // in the same place every day, and it keeps the five robotics research
+  // buckets side by side instead of scattered by how busy each one was.
+  const order = Object.keys(state.categories);
   const el = document.getElementById('cats');
   el.innerHTML = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
     .map(([cat, n]) => `<button class="cat" data-cat="${esc(cat)}"
         aria-pressed="${state.cats.has(cat)}">${esc(state.categories[cat] || cat)}<span class="n">${n}</span></button>`)
     .join('');

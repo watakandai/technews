@@ -61,7 +61,7 @@ def test_heuristic_scores_never_overwrite_an_llm_score(db):
     assert row["score"] == 90.0 and row["scored_by"] == "gemini:x"
 
 
-def test_categories_fill_empties_only(db):
+def test_categories_never_overwrite_the_model_s(db):
     upsert_items(db, [make(source_id="1"), make(source_id="2")])
     ids = [r["id"] for r in query_items(db)]
     set_llm_results(db, {ids[0]: {"score": 5.0, "reason": "", "category": "robotics"}}, "gemini:x", "h")
@@ -70,6 +70,19 @@ def test_categories_fill_empties_only(db):
     assert filled == 1
     assert rows[ids[0]] == "robotics", "the model's category outranks the keyword pass"
     assert rows[ids[1]] == "ai_ml"
+
+
+def test_a_keyword_category_is_refiled_when_the_taxonomy_moves(db):
+    # The split of "research" into subfields only reaches yesterday's items
+    # because the keyword pass is allowed to overwrite its own earlier answer.
+    upsert_items(db, [make(source_id="1")])
+    item_id = query_items(db)[0]["id"]
+    set_categories(db, {item_id: "research"})
+
+    assert set_categories(db, {item_id: "robot_planning"}) == 1
+    assert row_to_dict(query_items(db)[0])["category"] == "robot_planning"
+    # Re-running the unchanged pass is a no-op, so the daily count stays honest.
+    assert set_categories(db, {item_id: "robot_planning"}) == 0
 
 
 def test_unscored_items_excludes_the_current_profile_and_orders_by_popularity(db):

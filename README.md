@@ -36,7 +36,7 @@ export ->  docs/data/items.json  ->  GitHub Pages
 | Reddit (8 subreddits) | breadth, practitioner talk | upvotes (with app credentials) or feed rank |
 | Lobsters | small, heavily moderated, good corroboration | points + comments |
 | GitHub | repos that got popular this week | stars |
-| arXiv | robotics, ML, formal methods, control, optimization | none - ranked by profile alone |
+| arXiv | robotics, ML, formal methods, control, optimization, multi-agent | none - ranked by profile alone |
 | Bluesky | the microblog layer, link-carrying posts only | likes + reposts |
 | X / Twitter | same, **opt-in** - see below | likes + reposts |
 | ~20 RSS feeds | publications, labs, company blogs, newsletters | none |
@@ -78,6 +78,46 @@ Sources that publish no counts get **no popularity at all** rather than an
 invented one, and sort last under "Popular". What they get instead is the
 inherited score from any aggregator that ran the same link.
 
+### Categories
+
+Sixteen buckets, fixed and closed, because free-form tags from ten sources
+never line up ("ML" / "machine-learning" / "AI") and so can't drive a filter.
+The same list constrains the LLM, which keeps the model's categories and the
+keyword pass's identical.
+
+Research is **split by subfield** rather than kept as one pile - being told
+daily that there are 70 "papers" is not being told anything:
+
+| | |
+| --- | --- |
+| Robot Planning & Control | motion planning, MPC, whole-body control, kinematics |
+| Robot Optimization | trajectory optimization, solvers, factor graphs |
+| Robot Formal Methods | temporal logic, barrier functions, reachability |
+| Robot Multi-Agent Planning | multi-robot, MAPF, swarms, formation control |
+| Robot Learning & Foundation Models | VLAs, diffusion policies, imitation, sim-to-real |
+
+These five are **scoped to robotics**, and that scoping is doing real work:
+"optimization", "multi-agent", "verification" and "foundation model" are
+four of the most reused phrases in tech, and a bucket that claimed every one
+of them would swallow the compiler, the distributed-systems and the LLM-agent
+story alike. So each of them has two vocabularies - terms that mean robotics
+wherever they appear (`diffusion policy`, `whole-body control`) fire on their
+own, and the overloaded half fires only when the item also reads as robotics.
+An MPC paper about a quadruped is Robot Planning & Control; an MPC paper
+about a chemical plant is Research & Theory, which keeps everything else
+academic.
+
+The five sit *above* `robotics` in priority, because almost every robotics
+paper also says "robot" and filing on that word first would leave the
+subfields permanently empty. arXiv is the one source that files its own
+subject, and its codes map onto these buckets one for one - `cs.RO` plus
+`math.OC` is Robot Optimization without reading a word of the title.
+
+Changing the taxonomy takes effect on the next run with no flag: the keyword
+pass overwrites its own earlier answers (it is free and deterministic, so
+re-filing is a no-op until the list changes) and the LLM's cache key covers
+the category list, so items it scored are re-scored once and re-filed too.
+
 ### Ranking
 
 Two layers, the same split as the sibling project:
@@ -90,7 +130,7 @@ Two layers, the same split as the sibling project:
   that actually matters: *would this person open this?* It assigns the
   category in the same call, because it has already read the item.
 
-Scores are cached by `sha256(profile + model)`, so a daily run only pays for
+Scores are cached by `sha256(profile + model + taxonomy)`, so a daily run only pays for
 items it has never seen — typically 100-200 rather than 900. Editing
 `profile.md` changes the hash and re-scores the backlog once, which is the
 intended way to retune the feed.
@@ -162,7 +202,7 @@ by hand from the Actions tab — it takes a provider override, a
 
 ### Cost
 
-Gemini Flash on a day of ~900 items, of which ~150 are new: roughly 4
+Gemini Flash on a day of ~900 items, of which ~200 are new: roughly 5
 requests of 40 items each. Comfortably inside the free tier. `RANKER_LIMIT`
 caps it if you want a hard ceiling.
 
@@ -174,6 +214,8 @@ caps it if you want a hard ceiling.
 daily scan rather than a browse:
 
 - **Today / 3 days / Week / All**, and **For you / Popular / Newest**
+- Filter chips in taxonomy order, so the one you reach for daily is in the
+  same place every day and the five robotics buckets stay side by side
 - Grouped by category, with the day's strongest subject first — each
   category shows its top 10, ungrouped shows 20, and a **show more** button
   opens the rest. A day is ~200 rows, which is a wall rather than a page
@@ -194,7 +236,7 @@ every read is guarded so a private window still works.
 python -m pytest tests/ -q
 ```
 
-85 tests, no network. Parser tests run against captured real API responses in
+93 tests, no network. Parser tests run against captured real API responses in
 `tests/fixtures/` so they assert against the shapes these services actually
 return; the LLM tests use a stub provider and cover batching, a failed batch,
 a per-minute 429 retry, a daily quota stopping the run, and the caching that

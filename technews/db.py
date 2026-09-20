@@ -240,13 +240,23 @@ def unscored_items(db_path, profile_hash: str, since: str = ""):
 
 
 def set_categories(db_path, categories: dict) -> int:
-    """Write heuristic categories, without clobbering the model's."""
+    """Write keyword categories over each other, but never over the model's.
+
+    The guard protects the LLM's judgement, which is the only category here
+    that cost anything. It deliberately does NOT make a keyword category
+    sticky: the pass is free and deterministic, so re-filing every run is a
+    no-op until the taxonomy changes, and on the run after it changes it is
+    exactly what makes the new buckets reach the items already in the
+    database.
+    """
     written = 0
     with connect(db_path) as conn:
         for item_id, cat in categories.items():
             cur = conn.execute(
-                "UPDATE items SET category=? WHERE id=? AND (category IS NULL OR category='')",
-                (cat, item_id),
+                """UPDATE items SET category=?
+                    WHERE id=? AND (scored_by IS NULL OR scored_by='heuristic')
+                      AND COALESCE(category, '') != ?""",
+                (cat, item_id, cat),
             )
             written += cur.rowcount
     return written

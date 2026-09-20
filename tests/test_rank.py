@@ -88,6 +88,15 @@ def test_profile_hash_changes_with_the_profile_or_the_model():
     assert profile_hash("a", "m") != profile_hash("a", "other")
 
 
+def test_profile_hash_changes_with_the_taxonomy(monkeypatch):
+    # A cached row holds a category as well as a score, so splitting a
+    # category has to invalidate the cache the same way editing the profile
+    # does - otherwise old items stay filed under a bucket that moved.
+    before = profile_hash("a", "m")
+    monkeypatch.setattr(ranking, "CATEGORY_LIST", "robotics (Robots), other (Rest)")
+    assert profile_hash("a", "m") != before
+
+
 # -- reply parsing ----------------------------------------------------------
 
 def test_parse_results_tolerates_fences_and_prose():

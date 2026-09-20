@@ -172,9 +172,19 @@ def strip_comments(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", without).strip()
 
 
+CATEGORY_LIST = ", ".join(f"{k} ({v})" for k, v in CATEGORIES.items())
+
+
 def profile_hash(profile: str, model: str) -> str:
-    """Identifies a (profile, model) pair, so edits to either force a re-rank."""
-    return hashlib.sha256(f"{model}\x00{profile}".encode()).hexdigest()[:16]
+    """Identifies a (profile, model, taxonomy) triple, so an edit to any of
+    them forces a re-rank.
+
+    The taxonomy is in here because the cached row holds a category as well
+    as a score. Leave it out and splitting a category would leave every item
+    already scored sitting in a bucket that no longer means what it did.
+    """
+    key = f"{model}\x00{profile}\x00{CATEGORY_LIST}"
+    return hashlib.sha256(key.encode()).hexdigest()[:16]
 
 
 def _item_line(i: int, row: dict) -> str:
@@ -203,8 +213,6 @@ def _item_line(i: int, row: dict) -> str:
     return " | ".join(bits)
 
 
-CATEGORY_LIST = ", ".join(f"{k} ({v})" for k, v in CATEGORIES.items())
-
 PROMPT = """You are triaging a day of tech news for one specific person, whose \
 profile is below. This is their daily reading list, so score each item on \
 whether THEY would open it - not on how important it is in general.
@@ -227,6 +235,10 @@ story they don't care about is still noise. Penalise low-information items \
 is silent on something, score it in the middle rather than guessing.
 
 CATEGORY - pick exactly one id from: {categories}
+Prefer the most specific id that fits. The robot_* ids are for work about \
+robots and autonomous machines: an optimization or multi-agent or \
+foundation-model item that is not about robots belongs in research or ai_ml, \
+not in a robot_* bucket.
 
 Return ONLY a JSON array, no prose, no code fence:
 [{{"i": <item number>, "score": <integer 0-100>, "category": "<category id>", \

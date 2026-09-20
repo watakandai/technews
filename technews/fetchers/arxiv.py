@@ -23,16 +23,18 @@ API = "http://export.arxiv.org/api/query"
 ATOM = "http://www.w3.org/2005/Atom"
 
 # cs.RO robotics, cs.AI/cs.LG learning, cs.LO + cs.FL formal methods/logic,
-# math.OC optimization and control, eess.SY systems and control.
+# math.OC optimization and control, eess.SY systems and control, cs.MA
+# multi-agent systems. These map onto the robot_* categories one for one,
+# which is the point: arXiv is the only source that files its own subject.
 DEFAULT_CATEGORIES = (
-    "cs.RO", "cs.AI", "cs.LG", "cs.LO", "cs.FL", "math.OC", "eess.SY",
+    "cs.RO", "cs.AI", "cs.LG", "cs.LO", "cs.FL", "math.OC", "eess.SY", "cs.MA",
 )
 
 
 class ArxivFetcher:
     name = "arxiv"
 
-    def __init__(self, categories=DEFAULT_CATEGORIES, limit: int = 60, timeout: int = 25):
+    def __init__(self, categories=DEFAULT_CATEGORIES, limit: int = 100, timeout: int = 25):
         self.categories = list(categories)
         self.limit = limit
         self.timeout = timeout

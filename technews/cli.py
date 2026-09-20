@@ -174,7 +174,8 @@ def _cmd_rank(args) -> None:
     # 2. Keyword categories for everything, so filters work without a key.
     hints = feed_hints()
     cats = {r["id"]: categorizing.categorize(r, hints) for r in rows}
-    print(f"categories: filled {set_categories(args.db, cats)} empty ones")
+    print(f"categories: filed {set_categories(args.db, cats)} items "
+          f"({len(rows) - len(cats)} already carry the model's)")
 
     # 3. Heuristic relevance, reading the popularity just written.
     rows = [row_to_dict(r) for r in query_items(args.db)]
