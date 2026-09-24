@@ -187,8 +187,11 @@ Add under **Settings → Secrets and variables → Actions**:
 
 | Kind | Name | Needed? | Why |
 | --- | --- | --- | --- |
-| Variable | `RANKER_PROVIDER` | for profile ranking | `gemini` or `anthropic`. Unset = heuristic only |
+| Variable | `RANKER_PROVIDER` | for profile ranking | `gemini`, `anthropic`, `groq` or `ollama`. Unset = heuristic only |
 | Secret | `GEMINI_API_KEY` | for profile ranking | [aistudio.google.com](https://aistudio.google.com/apikey) |
+| Secret | `GROQ_API_KEY` | recommended | Free fallback when the primary 503s or runs out of quota — [console.groq.com](https://console.groq.com/keys) |
+| Secret | `ANTHROPIC_API_KEY` | optional | Claude as a paid fallback (or primary). Skipped when unset |
+| Variable | `RANKER_FALLBACK` | optional | Fallback order for whatever the primary leaves unscored. Default `groq,anthropic,ollama`; providers without a key are skipped, and `ollama` is a small model (`OLLAMA_MODEL`, default `qwen3.5:4b`) the workflow runs on the runner's CPU |
 | Secret | `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` | recommended | Reddit 429s anonymous CI traffic; a free "script" app at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) fixes it and adds real upvote counts |
 | Secret | `X_BEARER_TOKEN` | optional | Enables X. Requires a paid X API tier |
 

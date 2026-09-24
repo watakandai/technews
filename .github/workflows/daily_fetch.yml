@@ -22,7 +22,7 @@ on:
         description: 'LLM ranker provider (blank = use the RANKER_PROVIDER variable)'
         required: false
         type: choice
-        options: ['', 'gemini', 'anthropic']
+        options: ['', 'gemini', 'anthropic', 'groq', 'ollama']
         default: ''
       rescore_all:
         description: 'Re-score every recent item, not just new ones'
@@ -67,6 +67,38 @@ jobs:
           key: news-db-${{ github.run_number }}
           restore-keys: news-db-
 
+      # The last-resort ranker: a small open model on this runner's own CPU,
+      # free (public repo) and immune to provider outages. Installing it and
+      # pulling ~3GB of weights takes a couple of minutes, so it happens in
+      # the background while fetch runs, and "Wait for Ollama" below collects
+      # it. Skipped when no LLM ranking will happen at all.
+      - name: Start Ollama in the background
+        if: >-
+          (inputs.provider || vars.RANKER_PROVIDER) != '' &&
+          (contains(vars.RANKER_FALLBACK || 'groq,anthropic,ollama', 'ollama') ||
+           inputs.provider == 'ollama')
+        env:
+          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL || 'qwen3.5:4b' }}
+        run: |
+          cat > /tmp/ollama-setup.sh <<'SH'
+          set -e
+          echo "$(date -u +%T) installing"
+          curl -fsSL https://ollama.com/install.sh | sh
+          # The installer starts a systemd service but returns before it is
+          # listening, and `ollama pull` fails outright on a closed port.
+          # Wait for it, and start the server by hand if systemd didn't.
+          for i in $(seq 30); do
+            curl -sf http://127.0.0.1:11434/api/version >/dev/null && break
+            [ "$i" = 10 ] && { nohup ollama serve > /tmp/ollama-serve.log 2>&1 & }
+            sleep 2
+          done
+          echo "$(date -u +%T) server up, pulling $OLLAMA_MODEL"
+          ollama pull "$OLLAMA_MODEL" 2>&1 | tr '\r' '\n' | grep -v '^pulling.*%' || true
+          echo "$(date -u +%T) done"
+          SH
+          nohup bash /tmp/ollama-setup.sh > /tmp/ollama-setup.log 2>&1 &
+          echo "OLLAMA_SETUP_STARTED=1" >> "$GITHUB_ENV"
+
       - name: Fetch every source
         env:
           # Optional. Without them Reddit falls back to its public feed,
@@ -81,8 +113,8 @@ jobs:
         run: python -m technews.cli --db /tmp/news.db fetch --days 3
 
       # Which provider to use is explicit: set the RANKER_PROVIDER repo
-      # variable (Settings -> Variables) to gemini or anthropic and add the
-      # matching secret. Left unset, the LLM step is skipped and the site
+      # variable (Settings -> Variables) to gemini, anthropic, groq or ollama
+      # and add the matching secret. Left unset, the LLM step is skipped and the site
       # ships heuristic scores only - so a fork with no keys still works.
       - name: Resolve ranker provider
         id: ranker
@@ -90,14 +122,36 @@ jobs:
           REQUESTED: ${{ inputs.provider || vars.RANKER_PROVIDER }}
           HAS_GEMINI: ${{ secrets.GEMINI_API_KEY != '' }}
           HAS_ANTHROPIC: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+          HAS_GROQ: ${{ secrets.GROQ_API_KEY != '' }}
         run: |
           case "$REQUESTED" in
+            ollama)    ;;
+            groq)      [ "$HAS_GROQ" = true ]      || { echo "::warning::RANKER_PROVIDER=groq but GROQ_API_KEY is not set; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0; } ;;
             gemini)    [ "$HAS_GEMINI" = true ]    || { echo "::warning::RANKER_PROVIDER=gemini but GEMINI_API_KEY is not set; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0; } ;;
             anthropic) [ "$HAS_ANTHROPIC" = true ] || { echo "::warning::RANKER_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0; } ;;
             '')        echo "RANKER_PROVIDER not set - shipping heuristic scores only." ;;
             *)         echo "::warning::unknown RANKER_PROVIDER '$REQUESTED'; skipping LLM rank"; echo "provider=" >> "$GITHUB_OUTPUT"; exit 0 ;;
           esac
           echo "provider=$REQUESTED" >> "$GITHUB_OUTPUT"
+
+      # Only once the model is pulled does OLLAMA_HOST get set - that is
+      # what tells the ranker the fallback is usable. If setup failed or is
+      # still going after 10 minutes, the ranker skips Ollama, not the run.
+      - name: Wait for Ollama
+        if: env.OLLAMA_SETUP_STARTED == '1' && steps.ranker.outputs.provider != ''
+        env:
+          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL || 'qwen3.5:4b' }}
+        run: |
+          for _ in $(seq 120); do
+            if curl -sf http://127.0.0.1:11434/api/tags | grep -q "\"$OLLAMA_MODEL\""; then
+              echo "OLLAMA_HOST=http://127.0.0.1:11434" >> "$GITHUB_ENV"
+              echo "Ollama ready with $OLLAMA_MODEL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::warning::Ollama wasn't ready after 10 minutes; ranking without it"
+          tail -20 /tmp/ollama-setup.log || true
 
       # Exactly one of the next two steps runs. `rank --llm` does the
       # popularity and heuristic passes itself before calling the provider,
@@ -111,7 +165,16 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL || 'qwen3.5:4b' }}
           PROVIDER: ${{ steps.ranker.outputs.provider }}
+          # Tried in order for whatever PROVIDER leaves unscored (a 503, a
+          # spent quota). Groq is free with no card: add GROQ_API_KEY as a
+          # secret. Claude is used only if ANTHROPIC_API_KEY is set (it is
+          # paid). Ollama is the runner-local model started above. A
+          # fallback without a key/server is skipped, not fatal. Batch sizes
+          # and spacing are their own - see rank.FALLBACK_PACING.
+          FALLBACK: ${{ vars.RANKER_FALLBACK || 'groq,anthropic,ollama' }}
           RESCORE_ALL: ${{ inputs.rescore_all }}
           # A manual run's `limit` input wins over the variable, so a one-off
           # "score everything" run doesn't mean editing repo settings.
@@ -122,7 +185,7 @@ jobs:
           BATCH_SIZE: ${{ vars.RANKER_BATCH_SIZE || 40 }}
           MIN_INTERVAL: ${{ vars.RANKER_MIN_INTERVAL || 8 }}
         run: |
-          args=(--provider "$PROVIDER" --batch-size "$BATCH_SIZE" --min-interval "$MIN_INTERVAL")
+          args=(--provider "$PROVIDER" --fallback "$FALLBACK" --batch-size "$BATCH_SIZE" --min-interval "$MIN_INTERVAL")
           [ "$RESCORE_ALL" = true ] && args+=(--rescore-all)
           if [ -n "$LIMIT" ]; then
             case "$LIMIT" in
