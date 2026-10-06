@@ -15,7 +15,11 @@ name: Daily news refresh
 
 on:
   schedule:
-    - cron: '0 13 * * *'   # 13:00 UTC daily = 6am PT, ready before the morning read
+    # 08:17 UTC = 1:17am PT (12:17am in winter - GitHub's cron is UTC and
+    # ignores daylight saving). Scheduled runs start hours late when GitHub is
+    # busy, so this runs overnight, when the queue is short, and off the top of
+    # the hour, when everyone else's cron fires. Ready before the morning.
+    - cron: '17 8 * * *'
   workflow_dispatch:
     inputs:
       provider:
