@@ -211,7 +211,7 @@ def set_llm_results(db_path, results: dict, scored_by: str, profile_hash: str) -
     with connect(db_path) as conn:
         for item_id, r in results.items():
             conn.execute(
-                """UPDATE items SET score=?, score_reason=?, category=?,
+                """UPDATE items SET score=?, score_reason=?, category=COALESCE(?, category),
                        scored_by=?, scored_at=?, profile_hash=? WHERE id=?""",
                 (r["score"], r["reason"], r.get("category") or None,
                  scored_by, now, profile_hash, item_id),
@@ -223,18 +223,23 @@ def unscored_items(db_path, profile_hash: str, since: str = ""):
     """Items never scored against this exact (profile, model) pair.
 
     This is what makes a daily LLM run cost pennies: yesterday's 900 items
-    are already scored, so only today's new arrivals are sent.
+    are already scored, so only today's new arrivals are sent. Items only the
+    runner-local model scored come back too (see rank.LOCAL_SCALE), after
+    the never-scored ones, so the hosted models replace them when they can.
     """
     params = [profile_hash]
     clause = ""
     if since:
         clause = " AND COALESCE(published_ts, first_seen) >= ?"
         params.append(since)
+    params.append(profile_hash)
     with connect(db_path) as conn:
         return list(conn.execute(
             f"""SELECT * FROM items
-                WHERE (profile_hash IS NULL OR profile_hash != ?){clause}
-                ORDER BY popularity IS NULL, popularity DESC""",
+                WHERE (profile_hash IS NULL OR profile_hash != ?
+                       OR scored_by LIKE 'ollama:%'){clause}
+                ORDER BY (profile_hash IS NOT NULL AND profile_hash = ?),
+                         popularity IS NULL, popularity DESC""",
             params,
         ))
 
@@ -254,7 +259,8 @@ def set_categories(db_path, categories: dict) -> int:
         for item_id, cat in categories.items():
             cur = conn.execute(
                 """UPDATE items SET category=?
-                    WHERE id=? AND (scored_by IS NULL OR scored_by='heuristic')
+                    WHERE id=? AND (scored_by IS NULL OR scored_by='heuristic'
+                                    OR scored_by LIKE 'ollama:%')
                       AND COALESCE(category, '') != ?""",
                 (cat, item_id, cat),
             )

@@ -137,6 +137,12 @@ items it has never seen — typically 100-200 rather than 900. Editing
 `profile.md` changes the hash and re-scores the backlog once, which is the
 intended way to retune the feed.
 
+**The runner-local model's scores are provisional.** A 4B model on a CPU
+over-scores everything near the profile's top priority, so its scores are
+shown scaled by `rank.LOCAL_SCALE` (0.7), its categories are replaced by the
+keyword pass, and its items are re-sent to the hosted models on the next run
+that has quota.
+
 **The heuristic alone cannot surface a quiet paper.** An arXiv preprint on
 Lyapunov certificates has no votes anywhere, so the free ranker has nothing
 to go on. That is exactly what the profile ranker is for, and why the page
@@ -241,7 +247,7 @@ every read is guarded so a private window still works.
 python -m pytest tests/ -q
 ```
 
-110 tests, no network. Parser tests run against captured real API responses in
+113 tests, no network. Parser tests run against captured real API responses in
 `tests/fixtures/` so they assert against the shapes these services actually
 return; the LLM tests use a stub provider and cover batching, a failed batch,
 a per-minute 429 retry, a daily quota stopping the run, and the caching that

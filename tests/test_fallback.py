@@ -180,3 +180,17 @@ def test_requests_do_not_use_urllibs_default_user_agent(monkeypatch):
     monkeypatch.setattr(rank.urllib.request, "urlopen", fake_urlopen)
     rank._post_json(rank.GROQ_URL, {"Authorization": "Bearer x"}, {}, 30)
     assert captured["ua"] and "Python-urllib" not in captured["ua"]
+
+
+def test_a_skipped_item_is_not_sent_to_that_provider_again(monkeypatch):
+    _two_providers(monkeypatch, _unavailable, _scores_all)
+    out = rank.llm_scores_chain([_row(i) for i in range(1, 5)], "p", ["first", "backup"],
+                                skip={"backup": {2, 3}}, sleep=lambda s: None)
+    assert set(out["backup:backup-m"]) == {1, 4}
+
+
+def test_local_model_scores_are_shown_scaled_down():
+    local = {"score": 98.0, "scored_by": "ollama:qwen3.5:4b"}
+    hosted = {"score": 80.0, "scored_by": "groq:openai/gpt-oss-120b"}
+    assert rank.shown_score(local) == round(98 * rank.LOCAL_SCALE, 1)
+    assert rank.shown_score(local) < rank.shown_score(hosted) == 80.0

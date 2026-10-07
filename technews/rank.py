@@ -502,6 +502,31 @@ FALLBACK_PACING = {
     "ollama": (10, 0.0),
 }
 
+# The runner-local model is the last resort, and its scores are not on the
+# same scale as the hosted models'. With a profile that names a top priority,
+# a 4B model gives ~7% of everything 90+ ("Claude partial outage: directly
+# impacts robotics inference"), where Gemini and Groq give well under 1%.
+# Its scores are therefore provisional: shown scaled by LOCAL_SCALE, so its
+# ceiling sits below the hosted models' top picks (0.7 also brings its mean
+# in line with Gemini's), filed by the keyword categorizer instead of its own
+# guess, and re-sent to the hosted models on the next run that has quota.
+LOCAL_PROVIDERS = ("ollama",)
+LOCAL_SCALE = 0.7
+
+
+def is_provisional(row: dict) -> bool:
+    """Was this item scored by the runner-local model?"""
+    return (row.get("scored_by") or "").split(":", 1)[0] in LOCAL_PROVIDERS
+
+
+def shown_score(row: dict):
+    """The score the page ranks by: a local model's is scaled down."""
+    score = row.get("score")
+    if score is None or not is_provisional(row):
+        return score
+    return round(score * LOCAL_SCALE, 1)
+
+
 # Per-request timeouts for providers slower than the default. A CPU-only
 # Ollama can take minutes on one batch.
 PROVIDER_TIMEOUT = {
@@ -615,7 +640,7 @@ def llm_scores(rows, profile, *, provider="gemini", model=None, batch_size=40,
 
 def llm_scores_chain(rows, profile, providers, *, model=None, batch_size=40,
                      min_interval=0, on_progress=None, on_provider=None,
-                     **kwargs) -> dict:
+                     skip=None, **kwargs) -> dict:
     """Score rows with providers[0], then hand what it missed to the next.
 
     Returns {"provider:model": {row id: result dict}}, so each score keeps a
@@ -623,8 +648,11 @@ def llm_scores_chain(rows, profile, providers, *, model=None, batch_size=40,
     `min_interval` apply to the first provider; fallbacks use their own
     default model and FALLBACK_PACING. A fallback with no key configured is
     skipped (reported through on_provider) rather than failing the run -
-    only an unusable first provider is an error.
+    only an unusable first provider is an error. `skip` is {provider: row
+    ids} that provider should not be sent - an item the local model already
+    scored is retried with the hosted ones but not re-run locally.
     """
+    skip = skip or {}
     for name in providers:
         if name not in PROVIDERS:
             raise ValueError(f"unknown provider {name!r}; expected one of {sorted(PROVIDERS)}")
@@ -639,18 +667,21 @@ def llm_scores_chain(rows, profile, providers, *, model=None, batch_size=40,
             if on_provider:
                 on_provider(name, None, len(pending), f"skipped ({env_var} not set)")
             continue
+        sending = [r for r in pending if r["id"] not in skip.get(name, ())]
+        if not sending:
+            continue
         use_model = model if n == 0 and model else default_model
         size, interval = (
             (batch_size, min_interval) if n == 0
             else FALLBACK_PACING.get(name, (batch_size, min_interval))
         )
         if on_provider:
-            note = "" if n == 0 else f"falling back for {len(pending)} unscored items"
-            on_provider(name, use_model, len(pending), note)
+            note = "" if n == 0 else f"falling back for {len(sending)} unscored items"
+            on_provider(name, use_model, len(sending), note)
         if name in PROVIDER_TIMEOUT:
             kwargs = {**kwargs, "timeout": PROVIDER_TIMEOUT[name]}
         got = llm_scores(
-            pending, profile, provider=name, model=use_model,
+            sending, profile, provider=name, model=use_model,
             batch_size=size, min_interval=interval, on_progress=on_progress, **kwargs,
         )
         if got:

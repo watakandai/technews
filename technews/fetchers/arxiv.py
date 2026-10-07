@@ -52,6 +52,8 @@ ROBOT_LEARNING_QUERY = (
 )
 
 
+# The listing is generated per request and a 100-entry one has taken over
+# 25 seconds from CI, hence the long default timeout.
 # arXiv asks API clients for three seconds between calls and answers 429 or
 # 503 to a client that doesn't wait. Two queries now run back to back.
 PAUSE = 3.5
@@ -61,7 +63,7 @@ _last_call = [float("-inf")]   # monotonic time can start near zero
 class ArxivFetcher:
     name = "arxiv"
 
-    def __init__(self, categories=DEFAULT_CATEGORIES, limit: int = 100, timeout: int = 25,
+    def __init__(self, categories=DEFAULT_CATEGORIES, limit: int = 100, timeout: int = 60,
                  query: str = ""):
         self.categories = list(categories)
         self.limit = limit

@@ -99,6 +99,20 @@ def test_unscored_items_excludes_the_current_profile_and_orders_by_popularity(db
     assert len(unscored_items(db, "hash2")) == 3
 
 
+def test_local_model_scores_are_retried_after_the_never_scored(db):
+    upsert_items(db, [make(source_id=str(i)) for i in range(3)])
+    ids = [r["id"] for r in query_items(db)]
+    set_popularity(db, {ids[0]: (90.0, ""), ids[1]: (10.0, ""), ids[2]: (50.0, "")})
+    set_llm_results(db, {ids[0]: {"score": 95.0, "reason": "", "category": None}},
+                    "ollama:qwen3.5:4b", "hash1")
+    set_llm_results(db, {ids[2]: {"score": 40.0, "reason": "", "category": "ai_ml"}},
+                    "gemini:x", "hash1")
+    todo = [r["id"] for r in unscored_items(db, "hash1")]
+    assert todo == [ids[1], ids[0]], "new items first, then the local model's, never the hosted"
+    # A local model's guess at the category gives way to the keyword pass.
+    assert set_categories(db, {ids[0]: "robotics", ids[2]: "robotics"}) == 1
+
+
 def test_query_window_falls_back_to_first_seen_for_undated_items(db):
     upsert_items(db, [make(source_id="dated", published=datetime(2020, 1, 1, tzinfo=timezone.utc)),
                       make(source_id="undated")])

@@ -16,7 +16,6 @@
     {"name": "cnbc_tech",       "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910", "hint": "finance"},
     {"name": "ieee_spectrum",   "url": "https://spectrum.ieee.org/feeds/topic/robotics.rss","hint": "robotics"},
     {"name": "robot_report",    "url": "https://www.therobotreport.com/feed/",             "hint": "robotics"},
-    {"name": "itcanthink",      "url": "https://itcanthink.substack.com/feed",             "hint": "robot_ai"},
     {"name": "bair",            "url": "https://bair.berkeley.edu/blog/feed.xml",          "hint": "research"},
     {"name": "lerobot",         "url": "https://github.com/huggingface/lerobot/releases.atom", "hint": "robot_ai", "title_prefix": "LeRobot "},
     {"name": "gr00t",           "url": "https://github.com/NVIDIA/Isaac-GR00T/releases.atom",  "hint": "robot_ai", "title_prefix": "NVIDIA Isaac GR00T release "},

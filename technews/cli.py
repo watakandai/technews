@@ -219,6 +219,14 @@ def _cmd_rank(args) -> None:
 
     fallbacks = [p.strip() for p in args.fallback.split(",")
                  if p.strip() and p.strip() != args.provider]
+    # Items the local model already scored for this profile go back to the
+    # hosted models, but running them through the local one again would
+    # only cost the hour it took the first time.
+    rescoring = {r["id"] for r in todo
+                 if ranking.is_provisional(r) and r.get("profile_hash") == phash}
+    if rescoring:
+        print(f"llm: {len(rescoring)} of these were scored only by the local model; "
+              "retrying them with the hosted ones")
     batch_no = 0
 
     def on_provider(name, used_model, pending, note):
@@ -242,6 +250,7 @@ def _cmd_rank(args) -> None:
             todo, profile, [args.provider, *fallbacks], model=model,
             batch_size=args.batch_size, min_interval=args.min_interval,
             on_progress=progress, on_provider=on_provider,
+            skip={name: rescoring for name in ranking.LOCAL_PROVIDERS},
         )
     except (RuntimeError, ValueError) as exc:
         print(f"llm: SKIPPED ({exc})", file=sys.stderr)
@@ -252,6 +261,9 @@ def _cmd_rank(args) -> None:
     # scored_by keeps the truth about which model gave the score.
     results = {}
     for scored_by, got in by_model.items():
+        if ranking.is_provisional({"scored_by": scored_by}):
+            # A 4B model's category is a guess; the keyword pass's stands.
+            got = {k: dict(v, category=None) for k, v in got.items()}
         set_llm_results(args.db, got, scored_by, phash)
         results.update(got)
     if len(by_model) > 1:
@@ -348,11 +360,17 @@ def _cmd_export(args) -> None:
     since = (datetime.now(timezone.utc) - timedelta(days=args.days)).isoformat()
     rows = [row_to_dict(r) for r in query_items(args.db, order_by=args.sort, since=since)]
     total = len(rows)
+    hints = feed_hints()
+    for row in rows:
+        if ranking.is_provisional(row):
+            row["score"] = ranking.shown_score(row)
+            # Rows scored before local categories were dropped carry one.
+            row["category"] = categorizing.categorize(row, hints)
     if not args.no_collapse:
         rows = collapse(rows)
-        # Collapsing reshuffles: a merged row may have inherited a better
-        # score than the position it was sorted into.
-        rows.sort(key=_sort_key(args.sort), reverse=True)
+    # Collapsing and the local model's scaling both reshuffle: a row may now
+    # hold a different score than the position SQL sorted it into.
+    rows.sort(key=_sort_key(args.sort), reverse=True)
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
