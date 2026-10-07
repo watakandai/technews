@@ -36,12 +36,19 @@ DEFAULT_CATEGORIES = (
 # 100 slots hold only a handful of robotics papers, and the VLA, world-model
 # and end-to-end driving work the reader cares most about is easily crowded
 # out. Same source name, same ids: a paper both queries return is one row.
+# Multi-agent planning rides in the same request, because arXiv wants one
+# call every few seconds and its papers sit mostly in cs.MA and cs.AI, which
+# the general listing above shares with all of machine learning.
 ROBOT_LEARNING_QUERY = (
-    "(cat:cs.RO OR cat:cs.CV) AND ("
+    "((cat:cs.RO OR cat:cs.CV) AND ("
     'abs:"vision-language-action" OR abs:"robot foundation model" OR '
     'abs:"generalist policy" OR abs:"generalist robot" OR abs:"diffusion policy" OR '
     'abs:"world model" OR abs:"end-to-end driving" OR abs:"end-to-end autonomous driving" OR '
-    'abs:"cross-embodiment" OR abs:"imitation learning" OR abs:"flow matching policy")'
+    'abs:"cross-embodiment" OR abs:"imitation learning" OR abs:"flow matching policy"))'
+    " OR ((cat:cs.RO OR cat:cs.MA OR cat:cs.AI) AND ("
+    'abs:"multi-robot" OR abs:"multi-agent path finding" OR abs:"multi-agent pathfinding" OR '
+    'abs:"multi-agent planning" OR abs:"multi-agent reinforcement learning" OR '
+    'abs:"task allocation" OR abs:"swarm"))'
 )
 
 

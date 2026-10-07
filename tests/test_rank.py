@@ -69,6 +69,23 @@ def test_robot_foundation_model_items_are_lifted_before_any_model_sees_them():
     assert scores[2][1].startswith("robot foundation models")
 
 
+def test_foundation_models_outrank_classical_multi_agent_work():
+    titles = {
+        1: "A new database engine",
+        2: "Conflict-based search with learned heuristics for MAPF",
+        3: "Physical Intelligence open-sources pi0.5",
+        4: "LLM-based task allocation for multi-robot teams",
+    }
+    scores = heuristic_scores(
+        [row(i, title=t, cluster=f"u:{i}") for i, t in titles.items()], now=NOW)
+    assert scores[1][0] < scores[2][0] < scores[3][0] < scores[4][0]
+
+
+def test_an_llm_agent_framework_is_not_a_robot_foundation_model():
+    bonus, label = ranking.focus({"title": "A multi-agent systems framework for LLM agents"})
+    assert (bonus, label) == (ranking.MULTIAGENT_BONUS, "multi-agent algorithms")
+
+
 def test_cluster_sources_groups_by_key_and_leaves_singletons_alone():
     rows = [row(1, cluster="u:a"), row(2, source="reddit", cluster="u:a"),
             row(3, source="lobsters", cluster="")]

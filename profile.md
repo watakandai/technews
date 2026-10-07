@@ -39,6 +39,30 @@ write a paper. Rank this above everything else on the page.
 - Score these 85+ when they are substantive. A press release or a demo
   video with no technical detail is still interesting, but not top-of-page.
 
+## Second priority: multi-agent algorithms
+
+Multi-robot and multi-agent planning and coordination, by any method. AI is
+the key for robotics, so the order inside this section matters:
+
+1. **Foundation-model-based multi-agent work first** - LLMs, VLMs or VLAs
+   that plan, allocate tasks, negotiate or coordinate across several robots
+   or agents; shared world models; one policy controlling a fleet or a
+   team. When it is about robots, this ranks with the top priority above
+   (85+).
+2. **Learned multi-agent methods next** - multi-agent reinforcement
+   learning (MAPPO, QMIX and successors), learned heuristics for planners,
+   graph neural networks for coordination (70-85).
+3. **Classical and heuristic algorithms after that** - multi-agent path
+   finding (CBS, ECBS, PIBT, LaCAM), auctions and market-based task
+   allocation, swarm algorithms, formation control, decentralized planning
+   and consensus (70-80). New algorithms, solver releases and benchmark
+   results (the MAPF benchmarks, the League of Robot Runners) all count.
+
+Never rank a classical multi-agent item above a comparable
+foundation-model one. LLM "multi-agent" frameworks for chat agents and
+business workflows (agent orchestration libraries, crews of prompts) are
+not what I mean; treat them as ordinary AI tooling news.
+
 ## What I want
 
 - **Robotics** - manipulation, humanoids, autonomy, drones, field robotics,

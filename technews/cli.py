@@ -57,7 +57,7 @@ def build_fetchers(args):
         ),
         GitHubTrendingFetcher(token=os.environ.get("GITHUB_TOKEN", "").strip()),
         ArxivFetcher(),
-        ArxivFetcher(query=ROBOT_LEARNING_QUERY, limit=40),
+        ArxivFetcher(query=ROBOT_LEARNING_QUERY, limit=60),
         BlueskyFetcher(days=min(args.days, 3)),
         TwitterFetcher(bearer_token=os.environ.get("X_BEARER_TOKEN", "").strip()),
     ]

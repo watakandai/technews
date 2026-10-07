@@ -64,21 +64,54 @@ SOURCE_WEIGHT = {
     "producthunt": -2, # launches are relentless and mostly not for this reader
 }
 
-# The reader's top interest, scored up before any model sees it: robot
-# foundation models (Physical Intelligence, Generalist, Wayve and the like).
-# The LLM gets the same instruction from profile.md, but the long tail it never
-# scores, and any day the providers are down, rank on this pass alone. The
-# pattern is the robot_ai bucket's, so the boost and the category always agree.
-FOCUS_BONUS = 15
+# The reader's two top interests, scored up before any model sees them. The
+# LLM gets the same instruction from profile.md, but the long tail it never
+# scores, and any day the providers are down, rank on this pass alone.
+#
+# Foundation models for robots come first (Physical Intelligence, Generalist,
+# Wayve and the like): the robot_ai bucket's own vocabulary, or a robot story
+# that names a foundation model. Multi-agent algorithms come second, classical
+# (MAPF, auctions, swarms) and learned alike. An item that is both - an LLM
+# allocating tasks across a fleet - outranks either alone, and a classical
+# multi-agent paper never outranks a foundation-model one.
+FOCUS_BONUS = 15          # robot foundation models
+MULTIAGENT_BONUS = 10     # multi-agent algorithms, any approach
+BOTH_BONUS = 20           # foundation-model-based multi-agent work
+
+FOUNDATION_RE = re.compile(
+    r"\b(?:foundation model\w*|llms?|large language model\w*|language model\w*|"
+    r"vlms?|vision-language\w*|vlas?|world model\w*|gpt-?\d*|transformer\w*)(?!\w)",
+    re.I,
+)
+MULTIAGENT_RE = re.compile(
+    r"\b(?:multi-?agent (?:reinforcement learning|planning|coordination|"
+    r"path ?finding|pathfinding|systems?|collaboration|navigation|learning)|"
+    r"marl|conflict-based search|dec-pomdp|mappo|qmix|cs\.ma|"
+    r"decentrali[sz]ed (?:control|planning|coordination)|"
+    r"cooperative (?:planning|navigation|perception))(?!\w)",
+    re.I,
+)
 
 
-def _is_focus(row: dict) -> bool:
+def focus(row: dict) -> tuple:
+    """(bonus, label) for the reader's top interests; (0, "") otherwise."""
     tags = row.get("tags") or []
     text = " ".join([row.get("title") or "", (row.get("summary") or "")[:300],
                      " ".join(tags if isinstance(tags, list) else [str(tags)])])
-    # Only the bucket's own vocabulary, not its robotics-gated half: that half
-    # ("policy", "cs.LG") would lift every learning paper in cs.RO.
-    return bool(COMPILED["robot_ai"].search(text))
+    # Only robot_ai's own vocabulary, not its robotics-gated half: that half
+    # ("policy", "cs.LG") would lift every learning paper in cs.RO. A bare
+    # "LLM" counts only next to a robot: outside robotics, LLM plus
+    # multi-agent is an agent framework, which is the flood, not the interest.
+    foundation = bool(COMPILED["robot_ai"].search(text) or (
+        COMPILED["robotics"].search(text) and FOUNDATION_RE.search(text)))
+    multiagent = bool(COMPILED["robot_multiagent"].search(text) or MULTIAGENT_RE.search(text))
+    if foundation and multiagent:
+        return BOTH_BONUS, "foundation-model multi-agent"
+    if foundation:
+        return FOCUS_BONUS, "robot foundation models"
+    if multiagent:
+        return MULTIAGENT_BONUS, "multi-agent algorithms"
+    return 0, ""
 
 
 # Items whose titles are structurally low-information, whatever the source.
@@ -161,9 +194,10 @@ def heuristic_scores(rows: list, now: datetime = None) -> dict:
             why.append("fresh")
 
         score += SOURCE_WEIGHT.get(row["source"], 0)
-        if _is_focus(row):
-            score += FOCUS_BONUS
-            why.insert(0, "robot foundation models")
+        bonus, interest = focus(row)
+        if bonus:
+            score += bonus
+            why.insert(0, interest)
         if FILLER_RE.search(row.get("title") or ""):
             score -= 20
             why.append("routine/recurring post")
