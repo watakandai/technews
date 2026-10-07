@@ -27,6 +27,7 @@ POST_URL = "https://bsky.app/profile/{handle}/post/{rkey}"
 DEFAULT_QUERIES = (
     "LLM", "AI agents", "robotics", "open source", "chip",
     "developer tools", "self-driving", "machine learning",
+    "robot learning", "Physical Intelligence",
 )
 
 

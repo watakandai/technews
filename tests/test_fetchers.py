@@ -4,6 +4,7 @@ The fixtures are genuine API output, trimmed - the point is to assert
 against the shapes these services actually return rather than the shapes we
 imagined. None of these tests touch the network.
 """
+import urllib.parse
 import json
 
 from tests.conftest import fixture
@@ -120,6 +121,24 @@ def test_rss_prefers_the_atom_alternate_link_over_replies():
 def test_rss_source_tags_are_merged_with_the_feeds_own():
     items = RSSFetcher("ex", "http://x", tags=["mine"]).parse(fixture("atom.xml"))
     assert items[0].tags == ["mine", "robotics"]
+
+
+def test_rss_title_prefix_names_the_project_on_release_feeds():
+    items = RSSFetcher("ex", "http://x", title_prefix="LeRobot ").parse(fixture("atom.xml"))
+    assert items[0].title.startswith("LeRobot ")
+
+
+def test_arxiv_runs_a_raw_query_and_waits_between_calls(monkeypatch):
+    from technews.fetchers import arxiv
+    urls, sleeps = [], []
+    monkeypatch.setattr(arxiv, "get_bytes", lambda url, timeout: urls.append(url) or fixture("arxiv.xml"))
+    monkeypatch.setattr(arxiv.time, "sleep", sleeps.append)
+    monkeypatch.setattr(arxiv, "_last_call", [float("-inf")])
+    ArxivFetcher().fetch()
+    ArxivFetcher(query=arxiv.ROBOT_LEARNING_QUERY).fetch()
+    assert "cat%3Acs.RO%20OR" in urls[0]
+    assert "vision-language-action" in urllib.parse.unquote(urls[1])
+    assert len(sleeps) == 1 and 0 < sleeps[0] <= arxiv.PAUSE
 
 
 def test_bluesky_requires_a_link_and_takes_the_headline_from_the_slug():

@@ -13,6 +13,32 @@ Think of this as my Twitter feed, organized: one page I check every morning.
 I want the things I would have wanted to see, ranked so the top of the list
 is worth my first two minutes.
 
+## Top priority: robot foundation models
+
+This is what I am building toward. I want to implement state-of-the-art
+robot learning methods against a public benchmark, improve on them, and
+write a paper. Rank this above everything else on the page.
+
+- **The labs and their approach** - Physical Intelligence (pi0, pi0.5,
+  openpi), Generalist AI (GEN-0 and its scaling results), Wayve (end-to-end
+  driving, GAIA world models, LINGO), and anyone doing the same kind of
+  thing: Skild AI, Figure's Helix, Google DeepMind's Gemini Robotics, NVIDIA
+  GR00T and Cosmos, Toyota Research's large behavior models, 1X, Tesla's
+  end-to-end FSD and Optimus. Their papers, blog posts, releases, hires,
+  funding and credible rumors about them all count.
+- **The methods** - vision-language-action models, diffusion and flow-matching
+  policies, action tokenization and chunking, world models used for policy
+  learning or evaluation, cross-embodiment training, scaling laws for robot
+  data, end-to-end driving, sim-to-real, and real-time inference on robots.
+- **What I can use** - open weights, training code and datasets (LeRobot,
+  openpi, Open X-Embodiment, DROID), and benchmarks and leaderboards (LIBERO,
+  SimplerEnv, CALVIN, RoboCasa, ManiSkill, NAVSIM, Bench2Drive). A paper
+  with released code and a benchmark number scores higher than one without;
+  a new benchmark, or evidence that an existing one is saturated or broken,
+  is exactly the kind of thing I need to see.
+- Score these 85+ when they are substantive. A press release or a demo
+  video with no technical detail is still interesting, but not top-of-page.
+
 ## What I want
 
 - **Robotics** - manipulation, humanoids, autonomy, drones, field robotics,

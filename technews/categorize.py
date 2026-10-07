@@ -82,8 +82,9 @@ PATTERNS = {
                 r"drone\w*|uav|teleoperat\w*|end-effector\w*|embodied|"
                 r"autonomous vehicle\w*|self-driving|waymo|zoox|cruise|tesla fsd|"
                 r"slam|lidar|actuator\w*|cobot\w*|cs\.ro|"
-                r"boston dynamics|figure ai|unitree|agility robotics|anduril|"
-                r"skydio|nuro|kuka|fanuc",
+                r"boston dynamics|figure ai|figure 0\d|unitree|agility robotics|anduril|"
+                r"skydio|nuro|kuka|fanuc|wayve|physical intelligence|skild\w*|"
+                r"generalist ai|1x technologies|dyna robotics|field ai",
 
     # --- the five robotics research subfields --------------------------
     # What each of these matches on its own is deliberately narrow: terms
@@ -117,7 +118,16 @@ PATTERNS = {
                 r"diffusion policy|behavio(?:u)?r cloning|imitation learning|"
                 r"sim-?to-?real|sim2real|visuomotor|robot learning|embodied ai|"
                 r"manipulation polic\w*|robot foundation model\w*|"
-                r"learning from demonstration",
+                r"learning from demonstration|"
+                # The labs and models this bucket is mostly about. A launch
+                # headline names the model, not the field ("pi0.5 can now
+                # clean a kitchen"), so the names are the field here.
+                r"physical intelligence|openpi|π0\S*|pi-?0(?:\.\d)?|pi0-fast|"
+                r"generalist ai|gen-0|wayve|gaia-\d|lingo-\d|skild\w*|"
+                r"gr00t|gemini robotics|lerobot|smolvla|octo|rdt-1b|"
+                r"open x-embodiment|droid dataset|large behavio(?:u)?r model\w*|"
+                r"end-to-end (?:autonomous )?driving|embodied foundation model\w*|"
+                r"generalist (?:robot )?polic(?:y|ies)|action chunk\w*",
     # -------------------------------------------------------------------
 
     # Everything academic that is not one of the five above. Terms that also
@@ -198,6 +208,7 @@ GATED = {
     "robot_ai": r"foundation model\w*|vlm\w*|large language model\w*|llms?|"
                 r"transformer\w*|reinforcement learning|polic(?:y|ies)|"
                 r"end-to-end|self-supervised|neural network\w*|world model\w*|"
+                r"flow matching|helix|cosmos|scaling law\w*|"
                 r"diffusion model\w*|pretrain\w*|cs\.ai|cs\.lg",
 }
 

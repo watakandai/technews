@@ -35,7 +35,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .categorize import CATEGORIES
+from .categorize import CATEGORIES, COMPILED
 
 DEFAULT_PROFILE = Path(__file__).parent.parent / "profile.md"
 
@@ -63,6 +63,23 @@ SOURCE_WEIGHT = {
     "twitter": -3,
     "producthunt": -2, # launches are relentless and mostly not for this reader
 }
+
+# The reader's top interest, scored up before any model sees it: robot
+# foundation models (Physical Intelligence, Generalist, Wayve and the like).
+# The LLM gets the same instruction from profile.md, but the long tail it never
+# scores, and any day the providers are down, rank on this pass alone. The
+# pattern is the robot_ai bucket's, so the boost and the category always agree.
+FOCUS_BONUS = 15
+
+
+def _is_focus(row: dict) -> bool:
+    tags = row.get("tags") or []
+    text = " ".join([row.get("title") or "", (row.get("summary") or "")[:300],
+                     " ".join(tags if isinstance(tags, list) else [str(tags)])])
+    # Only the bucket's own vocabulary, not its robotics-gated half: that half
+    # ("policy", "cs.LG") would lift every learning paper in cs.RO.
+    return bool(COMPILED["robot_ai"].search(text))
+
 
 # Items whose titles are structurally low-information, whatever the source.
 FILLER_RE = re.compile(
@@ -144,6 +161,9 @@ def heuristic_scores(rows: list, now: datetime = None) -> dict:
             why.append("fresh")
 
         score += SOURCE_WEIGHT.get(row["source"], 0)
+        if _is_focus(row):
+            score += FOCUS_BONUS
+            why.insert(0, "robot foundation models")
         if FILLER_RE.search(row.get("title") or ""):
             score -= 20
             why.append("routine/recurring post")

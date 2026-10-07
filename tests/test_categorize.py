@@ -67,6 +67,17 @@ def test_each_subfield_gets_its_own_bucket():
     assert cat("OpenVLA: an open vision-language-action model") == "robot_ai"
 
 
+def test_robot_foundation_model_labs_and_models_are_named_not_described():
+    assert cat("Physical Intelligence releases pi0.5 weights") == "robot_ai"
+    assert cat("π0-FAST: efficient action tokenization") == "robot_ai"
+    assert cat("Wayve raises $1B") == "robot_ai"
+    assert cat("GEN-0 from Generalist AI") == "robot_ai"
+    assert cat("NVIDIA Cosmos world model for robots") == "robot_ai"
+    # Overloaded names only count with a robot in the room.
+    assert cat("Helix editor 25.07 released") != "robot_ai"
+    assert cat("Cosmos SDK update") != "robot_ai"
+
+
 def test_a_subfield_outranks_the_robotics_bucket_it_sits_inside():
     # Every one of these also matches "robotics". Filing on that first would
     # leave the five subfields permanently empty.

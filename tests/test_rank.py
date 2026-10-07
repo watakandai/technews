@@ -61,6 +61,14 @@ def test_recurring_threads_are_pushed_down():
     assert filler < normal
 
 
+def test_robot_foundation_model_items_are_lifted_before_any_model_sees_them():
+    plain = row(1, title="A new database engine", cluster="u:a")
+    focus = row(2, title="Physical Intelligence open-sources pi0.5", cluster="u:b")
+    scores = heuristic_scores([plain, focus], now=NOW)
+    assert scores[2][0] == scores[1][0] + ranking.FOCUS_BONUS
+    assert scores[2][1].startswith("robot foundation models")
+
+
 def test_cluster_sources_groups_by_key_and_leaves_singletons_alone():
     rows = [row(1, cluster="u:a"), row(2, source="reddit", cluster="u:a"),
             row(3, source="lobsters", cluster="")]

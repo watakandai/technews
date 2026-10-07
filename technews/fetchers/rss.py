@@ -33,12 +33,16 @@ IMG_RE = re.compile(r'<img[^>]+src=["\']([^"\']+)', re.I)
 class RSSFetcher:
     """A single feed. `name` is the source id the rest of the app groups by."""
 
-    def __init__(self, name: str, url: str, tags=None, limit: int = 40, timeout: int = 20):
+    def __init__(self, name: str, url: str, tags=None, limit: int = 40, timeout: int = 20,
+                 title_prefix: str = ""):
         self.name = name
         self.url = url
         self.tags = list(tags or [])
         self.limit = limit
         self.timeout = timeout
+        # A GitHub releases feed titles each entry "Release v0.6.1"; the
+        # prefix puts the project's name in front so the line means something.
+        self.title_prefix = title_prefix
 
     def fetch(self) -> list:
         return self.parse(get_bytes(self.url, self.timeout))
@@ -60,7 +64,7 @@ class RSSFetcher:
                     # (adding a date path, moving to a new CMS) and a
                     # URL-keyed row would re-enter as a duplicate.
                     source_id=_text(entry, "guid") or _text(entry, "id") or link,
-                    title=title,
+                    title=f"{self.title_prefix}{title}",
                     url=link,
                     author=_author(entry),
                     published=_date(entry),

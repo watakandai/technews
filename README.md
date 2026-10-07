@@ -36,10 +36,10 @@ export ->  docs/data/items.json  ->  GitHub Pages
 | Reddit (8 subreddits) | breadth, practitioner talk | upvotes (with app credentials) or feed rank |
 | Lobsters | small, heavily moderated, good corroboration | points + comments |
 | GitHub | repos that got popular this week | stars |
-| arXiv | robotics, ML, formal methods, control, optimization, multi-agent | none - ranked by profile alone |
+| arXiv | robotics, ML, formal methods, control, optimization, multi-agent; plus a second query just for robot foundation models (VLAs, world models, end-to-end driving) | none - ranked by profile alone |
 | Bluesky | the microblog layer, link-carrying posts only | likes + reposts |
 | X / Twitter | same, **opt-in** - see below | likes + reposts |
-| ~20 RSS feeds | publications, labs, company blogs, newsletters | none |
+| ~25 RSS feeds | publications, labs, company blogs, newsletters, LeRobot and GR00T releases | none |
 
 Adding a publication is one line in
 [`technews/feeds.json`](technews/feeds.json). Adding a new
@@ -124,8 +124,9 @@ Two layers, the same split as the sibling project:
 
 - **Heuristic** (`rank.heuristic_scores`) — free, deterministic, runs every
   time. Popularity, cross-source agreement, exponential freshness decay
-  (halving every 36h), source trust, filler penalties. It is the floor when
-  there is no key, no network, or a spent quota.
+  (halving every 36h), source trust, filler penalties, and a fixed lift
+  (`FOCUS_BONUS`) for robot foundation models, the reader's top interest. It
+  is the floor when there is no key, no network, or a spent quota.
 - **LLM** (`rank.llm_scores`) — reads `profile.md` and answers the question
   that actually matters: *would this person open this?* It assigns the
   category in the same call, because it has already read the item.
@@ -239,7 +240,7 @@ every read is guarded so a private window still works.
 python -m pytest tests/ -q
 ```
 
-93 tests, no network. Parser tests run against captured real API responses in
+108 tests, no network. Parser tests run against captured real API responses in
 `tests/fixtures/` so they assert against the shapes these services actually
 return; the LLM tests use a stub provider and cover batching, a failed batch,
 a per-minute 429 retry, a daily quota stopping the run, and the caching that

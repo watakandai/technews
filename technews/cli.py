@@ -14,7 +14,7 @@ from .db import (
     set_popularity, set_heuristic_scores, set_llm_results, set_categories,
     unscored_items, prune,
 )
-from .fetchers.arxiv import ArxivFetcher
+from .fetchers.arxiv import ROBOT_LEARNING_QUERY, ArxivFetcher
 from .fetchers.bluesky import BlueskyFetcher
 from .fetchers.github import GitHubTrendingFetcher
 from .fetchers.hackernews import HackerNewsFetcher
@@ -57,10 +57,12 @@ def build_fetchers(args):
         ),
         GitHubTrendingFetcher(token=os.environ.get("GITHUB_TOKEN", "").strip()),
         ArxivFetcher(),
+        ArxivFetcher(query=ROBOT_LEARNING_QUERY, limit=40),
         BlueskyFetcher(days=min(args.days, 3)),
         TwitterFetcher(bearer_token=os.environ.get("X_BEARER_TOKEN", "").strip()),
     ]
-    fetchers += [RSSFetcher(f["name"], f["url"]) for f in load_feeds()]
+    fetchers += [RSSFetcher(f["name"], f["url"], title_prefix=f.get("title_prefix", ""))
+                 for f in load_feeds()]
     return fetchers
 
 
